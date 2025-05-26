@@ -20,7 +20,7 @@ export type DeepResearchInput = z.infer<typeof DeepResearchInputSchema>;
 const ResearchResultItemSchema = z.object({
   title: z.string().describe('The title of the research finding.'),
   snippet: z.string().describe('A relevant snippet from the research finding.'),
-  link: z.string().url().describe('A plausible URL to the research finding.'),
+  link: z.string().describe('A plausible URL to the research finding. Should be a valid-looking URL string, e.g., https://www.example.com/page.'),
 });
 
 const DeepResearchOutputSchema = z.object({
@@ -63,3 +63,4 @@ const deepResearchFlow = ai.defineFlow(
     return output || { results: [] }; // Ensure results is always an array
   }
 );
+
