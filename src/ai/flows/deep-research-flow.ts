@@ -12,7 +12,6 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {performWebSearch} from '@/ai/tools/web-search-tool'; // Import the tool
 import { 
-  WebSearchInputSchema, // Import schema for type safety if needed, but primarily for tool definition
   WebSearchOutputSchema, // Correctly import WebSearchOutputSchema
   type WebSearchOutput // Correctly import WebSearchOutput type
 } from '@/ai/schemas/web-search-schemas';
@@ -25,8 +24,8 @@ const DeepResearchInputSchema = z.object({
 export type DeepResearchInput = z.infer<typeof DeepResearchInputSchema>;
 
 // Alias WebSearchOutputSchema as DeepResearchOutputSchema for clarity within this flow
-// and export it so it matches the file overview documentation.
-export const DeepResearchOutputSchema = WebSearchOutputSchema;
+// It is NOT exported from this 'use server' file.
+const DeepResearchOutputSchema = WebSearchOutputSchema;
 // Infer DeepResearchOutput type from the aliased schema.
 export type DeepResearchOutput = z.infer<typeof DeepResearchOutputSchema>;
 
@@ -38,7 +37,7 @@ export async function deepResearch(input: DeepResearchInput): Promise<DeepResear
 const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
   input: {schema: DeepResearchInputSchema},
-  output: {schema: DeepResearchOutputSchema}, // Use the aliased schema
+  output: {schema: DeepResearchOutputSchema}, // Use the (non-exported) aliased schema
   tools: [performWebSearch], // Make the tool available to the LLM
   system: `You are an AI assistant. Your task is to help the user find relevant online resources based on the provided text.
 1. Use the 'performWebSearch' tool to search the internet. The user's input text should be your primary query for the tool. The 'outputLanguage' field from the input should be passed as 'languageCode' to the 'performWebSearch' tool.
@@ -69,7 +68,7 @@ const deepResearchFlow = ai.defineFlow(
   {
     name: 'deepResearchFlow',
     inputSchema: DeepResearchInputSchema,
-    outputSchema: DeepResearchOutputSchema, // Use the aliased schema
+    outputSchema: DeepResearchOutputSchema, // Use the (non-exported) aliased schema
   },
   async (input: DeepResearchInput) => {
     // The prompt, when configured with tools, will handle calling the tool
