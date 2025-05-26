@@ -121,7 +121,7 @@ const LanguageProviderContext = createContext<LanguageProviderState | undefined>
 
 export function LanguageProvider({
   children,
-  defaultLanguage = 'en',
+  defaultLanguage = 'vn', // Changed default language to Vietnamese
   storageKey = 'app-language',
 }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(defaultLanguage);
@@ -197,7 +197,7 @@ export const useLanguage = () => {
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="light" storageKey="energy-audit-theme">
-      <LanguageProvider defaultLanguage="en" storageKey="energy-audit-language">
+      <LanguageProvider defaultLanguage="vn" storageKey="energy-audit-language">
         {children}
       </LanguageProvider>
     </ThemeProvider>

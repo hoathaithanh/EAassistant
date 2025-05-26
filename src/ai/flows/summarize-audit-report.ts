@@ -1,3 +1,4 @@
+
 // SummarizeAuditReport.ts
 'use server';
 
@@ -16,6 +17,7 @@ const SummarizeAuditReportInputSchema = z.object({
   reportSection: z
     .string()
     .describe('A section of an energy audit report to summarize.'),
+  outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
 });
 export type SummarizeAuditReportInput = z.infer<
   typeof SummarizeAuditReportInputSchema
@@ -38,7 +40,11 @@ const prompt = ai.definePrompt({
   name: 'summarizeAuditReportPrompt',
   input: {schema: SummarizeAuditReportInputSchema},
   output: {schema: SummarizeAuditReportOutputSchema},
-  prompt: `You are an expert energy auditor. Please provide a concise summary of the following section of an energy audit report:\n\n{{reportSection}}`,
+  prompt: `You are an expert energy auditor. Please provide a concise summary of the following section of an energy audit report.
+Generate the response in the following language: {{{outputLanguage}}}.
+
+Report Section:
+{{{reportSection}}}`,
 });
 
 const summarizeAuditReportFlow = ai.defineFlow(

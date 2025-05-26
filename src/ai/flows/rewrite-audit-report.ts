@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file contains the Genkit flow for rewriting audit reports.
@@ -12,6 +13,7 @@ import {z} from 'genkit';
 
 const RewriteAuditReportInputSchema = z.object({
   text: z.string().describe('The text from the energy audit report to rewrite.'),
+  outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
 });
 export type RewriteAuditReportInput = z.infer<typeof RewriteAuditReportInputSchema>;
 
@@ -28,8 +30,10 @@ const rewriteAuditReportPrompt = ai.definePrompt({
   name: 'rewriteAuditReportPrompt',
   input: {schema: RewriteAuditReportInputSchema},
   output: {schema: RewriteAuditReportOutputSchema},
-  prompt: `You are an expert in writing energy audit reports. Please rewrite the following text to improve its clarity and professionalism, while maintaining the original meaning:
+  prompt: `You are an expert in writing energy audit reports. Please rewrite the following text to improve its clarity and professionalism, while maintaining the original meaning.
+Generate the response in the following language: {{{outputLanguage}}}
 
+Text to rewrite:
 {{{text}}}`,
 });
 

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,6 +15,7 @@ import {z} from 'genkit';
 const ChangeAuditReportToneInputSchema = z.object({
   reportText: z.string().describe('The energy audit report text to modify.'),
   tone: z.string().describe('The desired tone for the report (e.g., professional, humorous, empathetic, formal, friendly).'),
+  outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
 });
 export type ChangeAuditReportToneInput = z.infer<typeof ChangeAuditReportToneInputSchema>;
 
@@ -30,15 +32,16 @@ const prompt = ai.definePrompt({
   name: 'changeAuditReportTonePrompt',
   input: {schema: ChangeAuditReportToneInputSchema},
   output: {schema: ChangeAuditReportToneOutputSchema},
-  prompt: `You are an expert writing assistant. You will be provided with an energy audit report, and a desired tone.
+  prompt: `You are an expert writing assistant. You will be provided with an energy audit report, a desired tone, and a desired output language.
+You will rewrite the energy audit report to match the tone and language requested.
 
-You will rewrite the energy audit report to match the tone requested.
-
-Report Text: {{{reportText}}}
+Report Text:
+{{{reportText}}}
 
 Tone: {{{tone}}}
+Output Language: {{{outputLanguage}}}
 
-Rewrite the above report text in the tone specified.`,
+Rewrite the above report text accordingly.`,
 });
 
 const changeAuditReportToneFlow = ai.defineFlow(

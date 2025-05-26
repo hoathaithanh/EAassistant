@@ -24,6 +24,7 @@ import { changeAuditReportTone, type ChangeAuditReportToneInput } from '@/ai/flo
 type Tone = 'professional' | 'formal' | 'empathetic' | 'friendly' | 'humorous';
 const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humorous'];
 
+
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -84,7 +85,7 @@ export default function AuditAssistantClient() {
   const handleRewrite = () => {
     makeAICall(
       rewriteAuditReport,
-      { text: inputText } as RewriteAuditReportInput,
+      { text: inputText, outputLanguage: language } as RewriteAuditReportInput,
       (output) => setOutputText(output.rewrittenText)
     );
   };
@@ -92,7 +93,7 @@ export default function AuditAssistantClient() {
   const handleExpand = () => {
     makeAICall(
       expandAuditReport,
-      { text: inputText } as ExpandAuditReportInput,
+      { text: inputText, outputLanguage: language } as ExpandAuditReportInput,
       (output) => setOutputText(output.expandedText)
     );
   };
@@ -100,7 +101,7 @@ export default function AuditAssistantClient() {
   const handleSummarize = () => {
     makeAICall(
       summarizeAuditReport,
-      { reportSection: inputText } as SummarizeAuditReportInput,
+      { reportSection: inputText, outputLanguage: language } as SummarizeAuditReportInput,
       (output) => setOutputText(output.summary)
     );
   };
@@ -108,7 +109,7 @@ export default function AuditAssistantClient() {
   const handleChangeTone = () => {
     makeAICall(
       changeAuditReportTone,
-      { reportText: inputText, tone: selectedTone } as ChangeAuditReportToneInput,
+      { reportText: inputText, tone: selectedTone, outputLanguage: language } as ChangeAuditReportToneInput,
       (output) => setOutputText(output.modifiedReportText)
     );
   };

@@ -1,3 +1,4 @@
+
 // src/ai/flows/expand-audit-report.ts
 'use server';
 /**
@@ -13,6 +14,7 @@ import {z} from 'genkit';
 
 const ExpandAuditReportInputSchema = z.object({
   text: z.string().describe('The text from the energy audit report to expand.'),
+  outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
 });
 export type ExpandAuditReportInput = z.infer<typeof ExpandAuditReportInputSchema>;
 
@@ -30,11 +32,12 @@ const expandAuditReportPrompt = ai.definePrompt({
   input: {schema: ExpandAuditReportInputSchema},
   output: {schema: ExpandAuditReportOutputSchema},
   prompt: `You are a senior energy consultant with extensive experience in practical energy-saving solutions.
-  Expand the following section of an energy audit report by adding relevant details, suggestions, and context based on your expertise.
+Expand the following section of an energy audit report by adding relevant details, suggestions, and context based on your expertise.
+Generate the response in the following language: {{{outputLanguage}}}.
 
-  Original Text: {{{text}}}
+Original Text: {{{text}}}
 
-  Expanded Text:`, // The LLM will expand upon the original text.
+Expanded Text:`,
 });
 
 const expandAuditReportFlow = ai.defineFlow(
