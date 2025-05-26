@@ -1,36 +1,35 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow to perform deep research based on input text.
+ * @fileOverview A Genkit flow to perform deep research based on input text using a web search tool.
  *
- * - deepResearch - A function that simulates an internet search for related documents.
+ * - deepResearch - A function that uses a tool to search the web for related documents.
  * - DeepResearchInput - The input type for the deepResearch function.
  * - DeepResearchOutput - The return type for the deepResearch function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {performWebSearch} from '@/ai/tools/web-search-tool'; // Import the tool
+import { 
+  WebSearchInputSchema, // Import schema for type safety if needed, but primarily for tool definition
+  WebSearchOutputSchema, // Correctly import WebSearchOutputSchema
+  type WebSearchOutput // Correctly import WebSearchOutput type
+} from '@/ai/schemas/web-search-schemas';
+
 
 const DeepResearchInputSchema = z.object({
   inputText: z.string().describe('The text to base the research on.'),
-  outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
+  outputLanguage: z.string().describe('The desired language for the output and search (e.g., "en" for English, "vn" for Vietnamese).'),
 });
 export type DeepResearchInput = z.infer<typeof DeepResearchInputSchema>;
 
-const ResearchResultItemSchema = z.object({
-  title: z.string().describe('The title of the research finding.'),
-  snippet: z.string().describe('A relevant snippet from the research finding.'),
-  link: z
-    .string()
-    .describe(
-      'A highly plausible and specific-looking URL to the research finding. It should appear authentic and relevant to the type of resource (e.g., https://www.some-manufacturer.com/manuals/product.pdf, https://www.supplier-corp.com/products/widget, https://www.researchportal.org/paper/123).'
-    ),
-});
-
-const DeepResearchOutputSchema = z.object({
-  results: z.array(ResearchResultItemSchema).describe('An array of research findings.'),
-});
+// Alias WebSearchOutputSchema as DeepResearchOutputSchema for clarity within this flow
+// and export it so it matches the file overview documentation.
+export const DeepResearchOutputSchema = WebSearchOutputSchema;
+// Infer DeepResearchOutput type from the aliased schema.
 export type DeepResearchOutput = z.infer<typeof DeepResearchOutputSchema>;
+
 
 export async function deepResearch(input: DeepResearchInput): Promise<DeepResearchOutput> {
   return deepResearchFlow(input);
@@ -39,38 +38,51 @@ export async function deepResearch(input: DeepResearchInput): Promise<DeepResear
 const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
   input: {schema: DeepResearchInputSchema},
-  output: {schema: DeepResearchOutputSchema},
-  prompt: `You are a highly capable AI research assistant. Based on the provided text, you need to find and list relevant online resources.
-For each resource, provide a concise title, a short snippet of relevant content, and a highly plausible and specific-looking URL.
-The resources should include technical documents, supplier websites, research papers, articles detailing solutions, and equipment price information if applicable.
-The search should be comprehensive and aim to provide actionable information related to the input text.
-Generate the response in the following language: {{{outputLanguage}}}.
-
-Input Text:
+  output: {schema: DeepResearchOutputSchema}, // Use the aliased schema
+  tools: [performWebSearch], // Make the tool available to the LLM
+  system: `You are an AI assistant. Your task is to help the user find relevant online resources based on the provided text.
+1. Use the 'performWebSearch' tool to search the internet. The user's input text should be your primary query for the tool. The 'outputLanguage' field from the input should be passed as 'languageCode' to the 'performWebSearch' tool.
+2. The tool will return a list of search results, each containing a title, a link, and a snippet.
+3. You MUST use the information returned by the 'performWebSearch' tool to populate the 'results' field in your output.
+4. Ensure the output strictly adheres to the 'DeepResearchOutputSchema'.
+5. If the 'performWebSearch' tool returns no results, or if the results are not relevant, you should return an empty array for the 'results' field.
+6. The search query to the tool should be based on the user's 'inputText'. The titles and snippets in the output should reflect the language of the search results, which is influenced by the 'languageCode' passed to the tool.
+   Make sure to request a reasonable number of results from the tool, for example, 5.
+`,
+  prompt: `
+Input Text for Research:
 {{{inputText}}}
 
-Think step-by-step:
-1. Understand the key topics and entities in the input text.
-2. Imagine performing searches on these topics using a search engine like Google.
-3. For at least 3-5 of the most relevant imagined search results, extract or generate a suitable title, a concise snippet highlighting the relevance, and a **highly plausible and specific-looking URL**. The URL should appear authentic and relevant to the type of resource. For example:
-    - For a technical document: https://www.some-manufacturer.com/support/manuals/product-model-123.pdf
-    - For a supplier website: https://www.industrial-supplier-corp.com/products/energy-efficient-motors
-    - For a research paper: https://www.researchgate.net/publication/123456789_Study_on_New_Energy_Solutions or https://arxiv.org/abs/2301.00123
-    - For an article: https://www.industry-insights-online.com/articles/advancements-in-solar-technology
-    - For pricing info: https://www.equipment-marketplace.com/listings/item/industrial-chiller-xyz/price
-    Avoid generic placeholders like 'example.com'. Aim for URLs that, while potentially fictional, mirror the structure and specificity of real web addresses for such resources.
-4. Ensure the output format is strictly an array of objects, each with "title", "snippet", and "link". If no relevant results can be found, return an empty array for "results".`,
+Desired Output Language for results (this determines the languageCode for the search tool): {{{outputLanguage}}}
+
+Based on the system instructions, invoke the 'performWebSearch' tool.
+Use the 'inputText' as the basis for the 'query' parameter of the tool.
+Use the 'outputLanguage' as the 'languageCode' parameter for the tool.
+Request 5 results from the tool.
+
+Then, formulate your response according to the DeepResearchOutputSchema using the results from the tool.
+If the tool provides no relevant results, ensure the 'results' array is empty.
+`,
 });
 
 const deepResearchFlow = ai.defineFlow(
   {
     name: 'deepResearchFlow',
     inputSchema: DeepResearchInputSchema,
-    outputSchema: DeepResearchOutputSchema,
+    outputSchema: DeepResearchOutputSchema, // Use the aliased schema
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output || { results: [] }; // Ensure results is always an array
+  async (input: DeepResearchInput) => {
+    // The prompt, when configured with tools, will handle calling the tool
+    // if the LLM decides it's necessary based on the prompt instructions.
+    // The LLM will receive the tool's output and use it to generate its final response.
+    const llmResponse = await prompt(input); // Pass the flow's input directly to the prompt
+
+    // Ensure the output is always in the correct format, even if the LLM fails or tool returns nothing.
+    if (llmResponse.output && Array.isArray(llmResponse.output.results)) {
+        return llmResponse.output;
+    }
+    // Fallback if LLM output is not as expected or tool failed silently
+    return { results: [] };
   }
 );
 
