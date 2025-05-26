@@ -114,29 +114,32 @@ const translations: Record<string, Record<Language, string>> = {
   vietnamese: { en: 'Vietnamese', vn: 'Tiếng Việt' },
   inputPlaceholder: { en: 'Enter your audit report content here...', vn: 'Nhập nội dung báo cáo kiểm toán của bạn tại đây...' },
   outputPlaceholder: { en: 'AI generated content will appear here...', vn: 'Nội dung do AI tạo sẽ xuất hiện ở đây...' },
-  aiToolsLabel: { en: 'AI Tools', vn: 'Công cụ AI'}
+  aiToolsLabel: { en: 'AI Tools', vn: 'Công cụ AI'},
+  searchRelatedDocuments: { en: 'Search for Related Documents', vn: 'Tìm kiếm tài liệu liên quan'},
+  relatedDocumentsTitle: { en: 'Related Documents', vn: 'Tài liệu Liên quan'},
+  noDocumentsFound: { en: 'No documents found.', vn: 'Không tìm thấy tài liệu nào.'},
+  copyResults: { en: 'Copy Results', vn: 'Sao chép Kết quả'},
+  viewSource: { en: 'View Source', vn: 'Xem Nguồn'},
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
 
 export function LanguageProvider({
   children,
-  defaultLanguage = 'vn', // Changed default language to Vietnamese
+  defaultLanguage = 'vn', 
   storageKey = 'app-language',
 }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(defaultLanguage);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // This effect runs only on the client, after the initial render.
     try {
       const storedLanguage = localStorage.getItem(storageKey) as Language;
       if (storedLanguage && translations['appName'][storedLanguage]) {
         setLanguageState(storedLanguage);
       } else {
-        // If no valid stored language, ensure default is set in localStorage
         localStorage.setItem(storageKey, defaultLanguage);
-        if (language !== defaultLanguage) { // only set if current state isn't already default
+        if (language !== defaultLanguage) { 
             setLanguageState(defaultLanguage);
         }
       }
@@ -146,11 +149,11 @@ export function LanguageProvider({
             setLanguageState(defaultLanguage);
         }
     }
-    setHydrated(true); // Mark as hydrated
+    setHydrated(true); 
   }, [storageKey, defaultLanguage, language]);
 
   const setLanguage = (lang: Language) => {
-    if (hydrated) { // Only interact with localStorage if client has hydrated
+    if (hydrated) { 
         try {
             localStorage.setItem(storageKey, lang);
         } catch (e) {
@@ -165,14 +168,12 @@ export function LanguageProvider({
   };
   
   const t = (key: string, langOverride?: Language) => {
-    // Before hydration, always use defaultLanguage.
-    // After hydration, use the current (possibly localStorage-derived) language.
     const effectiveLanguage = hydrated ? (langOverride || language) : defaultLanguage;
     return translations[key]?.[effectiveLanguage] || key;
   };
 
   const value = useMemo(() => ({
-    language: hydrated ? language : defaultLanguage, // Expose language carefully based on hydration
+    language: hydrated ? language : defaultLanguage, 
     setLanguage,
     toggleLanguage,
     t,
