@@ -1,0 +1,54 @@
+// SummarizeAuditReport.ts
+'use server';
+
+/**
+ * @fileOverview Summarizes a section of an energy audit report.
+ *
+ * - summarizeAuditReport - A function that summarizes an audit report section.
+ * - SummarizeAuditReportInput - The input type for the summarizeAuditReport function.
+ * - SummarizeAuditReportOutput - The return type for the summarizeAuditReport function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const SummarizeAuditReportInputSchema = z.object({
+  reportSection: z
+    .string()
+    .describe('A section of an energy audit report to summarize.'),
+});
+export type SummarizeAuditReportInput = z.infer<
+  typeof SummarizeAuditReportInputSchema
+>;
+
+const SummarizeAuditReportOutputSchema = z.object({
+  summary: z.string().describe('A concise summary of the report section.'),
+});
+export type SummarizeAuditReportOutput = z.infer<
+  typeof SummarizeAuditReportOutputSchema
+>;
+
+export async function summarizeAuditReport(
+  input: SummarizeAuditReportInput
+): Promise<SummarizeAuditReportOutput> {
+  return summarizeAuditReportFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'summarizeAuditReportPrompt',
+  input: {schema: SummarizeAuditReportInputSchema},
+  output: {schema: SummarizeAuditReportOutputSchema},
+  prompt: `You are an expert energy auditor. Please provide a concise summary of the following section of an energy audit report:\n\n{{reportSection}}`,
+});
+
+const summarizeAuditReportFlow = ai.defineFlow(
+  {
+    name: 'summarizeAuditReportFlow',
+    inputSchema: SummarizeAuditReportInputSchema,
+    outputSchema: SummarizeAuditReportOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

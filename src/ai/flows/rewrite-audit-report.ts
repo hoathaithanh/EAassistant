@@ -1,0 +1,46 @@
+'use server';
+/**
+ * @fileOverview This file contains the Genkit flow for rewriting audit reports.
+ *
+ * - rewriteAuditReport - A function that rewrites sections of an energy audit report using GenAI.
+ * - RewriteAuditReportInput - The input type for the rewriteAuditReport function.
+ * - RewriteAuditReportOutput - The return type for the rewriteAuditReport function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const RewriteAuditReportInputSchema = z.object({
+  text: z.string().describe('The text from the energy audit report to rewrite.'),
+});
+export type RewriteAuditReportInput = z.infer<typeof RewriteAuditReportInputSchema>;
+
+const RewriteAuditReportOutputSchema = z.object({
+  rewrittenText: z.string().describe('The rewritten text of the energy audit report.'),
+});
+export type RewriteAuditReportOutput = z.infer<typeof RewriteAuditReportOutputSchema>;
+
+export async function rewriteAuditReport(input: RewriteAuditReportInput): Promise<RewriteAuditReportOutput> {
+  return rewriteAuditReportFlow(input);
+}
+
+const rewriteAuditReportPrompt = ai.definePrompt({
+  name: 'rewriteAuditReportPrompt',
+  input: {schema: RewriteAuditReportInputSchema},
+  output: {schema: RewriteAuditReportOutputSchema},
+  prompt: `You are an expert in writing energy audit reports. Please rewrite the following text to improve its clarity and professionalism, while maintaining the original meaning:
+
+{{{text}}}`,
+});
+
+const rewriteAuditReportFlow = ai.defineFlow(
+  {
+    name: 'rewriteAuditReportFlow',
+    inputSchema: RewriteAuditReportInputSchema,
+    outputSchema: RewriteAuditReportOutputSchema,
+  },
+  async input => {
+    const {output} = await rewriteAuditReportPrompt(input);
+    return output!;
+  }
+);
