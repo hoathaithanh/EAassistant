@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; // Label might be removed if CardTitle is sufficient
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Bot, Zap, Settings2, TextSearch, AlignLeft } from 'lucide-react';
+import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/components/providers';
 
 import { rewriteAuditReport, type RewriteAuditReportInput } from '@/ai/flows/rewrite-audit-report';
@@ -31,9 +32,6 @@ export default function AuditAssistantClient() {
   const [selectedTone, setSelectedTone] = useState<Tone>('professional');
   const { toast } = useToast();
   const { t, language } = useLanguage();
-
-  // Debounce input text for AI calls if needed, or handle on button click.
-  // For simplicity, AI calls are triggered by button clicks.
 
   const handleCopyToClipboard = async () => {
     if (!outputText) return;
@@ -116,7 +114,6 @@ export default function AuditAssistantClient() {
     );
   };
   
-  // Effect to handle placeholder text changes on language switch
   const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
   const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
 
@@ -130,41 +127,21 @@ export default function AuditAssistantClient() {
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center text-xl">
-            <Bot className="mr-2 h-6 w-6 text-primary" />
-            {t('appName')}
+          <CardTitle className="flex items-center text-lg">
+            <FileText className="mr-2 h-5 w-5 text-primary" />
+            {t('inputTextLabel')}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="inputText" className="text-base font-medium">{t('inputTextLabel')}</Label>
-              <Textarea
-                id="inputText"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder={inputPlaceholder}
-                className="min-h-[200px] md:min-h-[300px] text-base rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                rows={10}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="outputText" className="text-base font-medium">{t('outputTextLabel')}</Label>
-              <Textarea
-                id="outputText"
-                value={outputText}
-                readOnly
-                placeholder={outputPlaceholder}
-                className="min-h-[200px] md:min-h-[300px] text-base bg-muted/50 rounded-md shadow-sm"
-                rows={10}
-              />
-              <Button onClick={handleCopyToClipboard} variant="outline" size="sm" className="mt-2 w-full md:w-auto" disabled={!outputText || isLoading}>
-                <Copy className="mr-2 h-4 w-4" />
-                {t('copyToClipboard')}
-              </Button>
-            </div>
-          </div>
+        <CardContent>
+          <Textarea
+            id="inputText"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder={inputPlaceholder}
+            className="min-h-[200px] text-base rounded-md shadow-sm focus:ring-primary focus:border-primary"
+            rows={10}
+            disabled={isLoading}
+          />
         </CardContent>
       </Card>
 
@@ -172,8 +149,8 @@ export default function AuditAssistantClient() {
         <CardHeader>
           <CardTitle className="flex items-center text-lg">
             <Settings2 className="mr-2 h-5 w-5 text-primary" />
-            AI Tools
-            </CardTitle>
+            {t('aiToolsLabel', language) || 'AI Tools'} 
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button onClick={handleRewrite} disabled={isLoading} className="w-full justify-start text-left py-6">
@@ -217,6 +194,31 @@ export default function AuditAssistantClient() {
             </p>
           </CardFooter>
         )}
+      </Card>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <Sparkles className="mr-2 h-5 w-5 text-primary" />
+            {t('outputTextLabel')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            id="outputText"
+            value={outputText}
+            readOnly
+            placeholder={outputPlaceholder}
+            className="min-h-[200px] text-base bg-muted/50 rounded-md shadow-sm"
+            rows={10}
+          />
+        </CardContent>
+        <CardFooter className="flex justify-end">
+           <Button onClick={handleCopyToClipboard} variant="outline" size="sm" className="w-full md:w-auto" disabled={!outputText || isLoading}>
+            <Copy className="mr-2 h-4 w-4" />
+            {t('copyToClipboard')}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

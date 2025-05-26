@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -113,6 +114,7 @@ const translations: Record<string, Record<Language, string>> = {
   vietnamese: { en: 'Vietnamese', vn: 'Tiếng Việt' },
   inputPlaceholder: { en: 'Enter your audit report content here...', vn: 'Nhập nội dung báo cáo kiểm toán của bạn tại đây...' },
   outputPlaceholder: { en: 'AI generated content will appear here...', vn: 'Nội dung do AI tạo sẽ xuất hiện ở đây...' },
+  aiToolsLabel: { en: 'AI Tools', vn: 'Công cụ AI'}
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
