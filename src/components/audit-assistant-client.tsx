@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label"; // Label might be removed if CardTitle is sufficient
 import {
   Select,
   SelectContent,
@@ -22,8 +21,8 @@ import { expandAuditReport, type ExpandAuditReportInput } from '@/ai/flows/expan
 import { summarizeAuditReport, type SummarizeAuditReportInput } from '@/ai/flows/summarize-audit-report';
 import { changeAuditReportTone, type ChangeAuditReportToneInput } from '@/ai/flows/change-audit-report-tone';
 
-type Tone = 'professional' | 'humorous' | 'empathetic' | 'formal' | 'friendly';
-const tones: Tone[] = ['professional', 'humorous', 'empathetic', 'formal', 'friendly'];
+type Tone = 'professional' | 'formal' | 'empathetic' | 'friendly' | 'humorous';
+const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humorous'];
 
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
@@ -149,7 +148,7 @@ export default function AuditAssistantClient() {
         <CardHeader>
           <CardTitle className="flex items-center text-lg">
             <Settings2 className="mr-2 h-5 w-5 text-primary" />
-            {t('aiToolsLabel', language) || 'AI Tools'} 
+            {t('aiToolsLabel')} 
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
