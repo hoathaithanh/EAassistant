@@ -1,8 +1,8 @@
 
 "use client";
 
-import { Settings } from "lucide-react"; // Changed from Moon, Sun
-import { useTheme } from "@/components/providers";
+import { Settings } from "lucide-react";
+import { useTheme, useLanguage } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -13,13 +13,18 @@ import {
 
 export function ThemeToggle() {
   const { setTheme, theme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
-          <Settings className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Toggle theme</span>
+        <Button 
+          variant="outline" 
+          className="flex flex-col items-center justify-center h-auto min-h-[68px] w-[70px] p-2 space-y-1 rounded-md text-xs font-medium bg-card text-card-foreground hover:bg-muted focus-visible:ring-primary focus-visible:ring-offset-0"
+          aria-label={t('toggleThemeLabel')}
+        >
+          <Settings className="h-5 w-5 text-foreground/80" />
+          <span className="text-foreground/90">{t('settingsLabel')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

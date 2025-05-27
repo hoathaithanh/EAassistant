@@ -89,7 +89,7 @@ interface LanguageProviderState {
   language: Language;
   setLanguage: (language: Language) => void;
   toggleLanguage: () => void;
-  t: (key: string, lang?: Language) => string;
+  t: (key: string, langOrParams?: Language | Record<string, string>) => string;
 }
 
 const translations: Record<string, Record<Language, string>> = {
@@ -121,6 +121,9 @@ const translations: Record<string, Record<Language, string>> = {
   copyResults: { en: 'Copy Results', vn: 'Sao chép Kết quả'},
   viewSource: { en: 'View Source', vn: 'Xem Nguồn'},
   toggleLanguage: { en: 'Toggle Language', vn: 'Thay đổi ngôn ngữ'},
+  settingsLabel: { en: 'Setting', vn: 'Cài đặt'},
+  setLanguageTo: { en: "Set language to {{lang}}", vn: "Đặt ngôn ngữ thành {{lang}}" },
+  toggleThemeLabel: { en: "Toggle theme", vn: "Chuyển đổi giao diện" },
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
@@ -168,10 +171,21 @@ export function LanguageProvider({
     setLanguage(language === 'en' ? 'vn' : 'en');
   };
   
-  const t = (key: string, langOverride?: Language) => {
-    const effectiveLanguage = hydrated ? (langOverride || language) : defaultLanguage;
-    return translations[key]?.[effectiveLanguage] || key;
+  const t = (key: string, langOrParams?: Language | Record<string, string>) => {
+    const effectiveLanguage = hydrated ? language : defaultLanguage;
+    let translation = translations[key]?.[effectiveLanguage] || key;
+
+    if (typeof langOrParams === 'object' && langOrParams !== null) {
+      Object.entries(langOrParams).forEach(([paramKey, paramValue]) => {
+        translation = translation.replace(new RegExp(`{{${paramKey}}}`, 'g'), paramValue);
+      });
+    } else if (typeof langOrParams === 'string' && translations[key]?.[langOrParams]) {
+      // Fallback for simple language override if params not used
+      translation = translations[key]?.[langOrParams] || key;
+    }
+    return translation;
   };
+
 
   const value = useMemo(() => ({
     language: hydrated ? language : defaultLanguage, 
