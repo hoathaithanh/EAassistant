@@ -10,13 +10,12 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="mr-4 flex items-center">
-          {/* Placeholder for the logo. For actual logo, place image in /public and update src. */}
           <Image
-            src="https://placehold.co/180x40.png?text=Vets+%7C+Energy+%26+Environment&font=roboto"
+            src="/Logo VETS-new.png" // Updated to use the logo from the public directory
             alt="Vets Energy and Environment Logo"
-            width={180}
-            height={40}
-            className="h-10 w-auto"
+            width={180} // Intrinsic width of the image, adjust if your logo's width is different
+            height={40} // Intrinsic height of the image, adjust if your logo's height is different
+            className="h-10 w-auto" // Displays with a height of 40px, width adjusts to maintain aspect ratio
             data-ai-hint="company logo"
             priority
           />
