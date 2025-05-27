@@ -120,6 +120,7 @@ const translations: Record<string, Record<Language, string>> = {
   noDocumentsFound: { en: 'No documents found.', vn: 'Không tìm thấy tài liệu nào.'},
   copyResults: { en: 'Copy Results', vn: 'Sao chép Kết quả'},
   viewSource: { en: 'View Source', vn: 'Xem Nguồn'},
+  toggleLanguage: { en: 'Toggle Language', vn: 'Thay đổi ngôn ngữ'},
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
