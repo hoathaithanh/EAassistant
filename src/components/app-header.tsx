@@ -4,26 +4,28 @@
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import Image from "next/image";
+import { useLanguage } from "@/components/providers";
 
 export default function AppHeader() {
+  const { t } = useLanguage();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-12 max-w-screen-2xl items-center">
-        <div className="mr-4 flex items-center">
+        <div className="mr-4 flex flex-col items-start">
           {/*
             ====================================================================
             IMPORTANT - LOGO DISPLAY NOTES:
             ====================================================================
             1. IMAGE SOURCE:
-               The image source is now an Unsplash URL. Ensure your internet
-               connection is active to load it. IF THIS FAILS, try placing
-               your logo (e.g., 'Logo VETS-new.png') in the 'public' directory
-               and changing src to '/Logo VETS-new.png'.
+               The image source is an SVG URL. Ensure your internet
+               connection is active to load it. 
 
             2. NEXT.CONFIG.JS:
-               The hostname 'images.unsplash.com' (and 'placehold.co') has been added to
-               next.config.ts remotePatterns to allow Next.js to optimize this image.
-               If using a local image from 'public', no config change is needed for that.
+               The hostname 'vets.energy' needs to be added to
+               next.config.ts remotePatterns to allow Next.js to optimize this image
+               if it wasn't already from a previous configuration.
+               (Assuming 'images.unsplash.com' and 'placehold.co' are already there).
 
             3. IMAGE DIMENSIONS:
                The 'width' and 'height' props (e.g., 180x40) are crucial.
@@ -33,23 +35,24 @@ export default function AppHeader() {
                'h-10 w-auto' controls the displayed size on the page.
 
             4. TROUBLESHOOTING:
-               - If using Unsplash/Placeholder: Check your browser's developer console (Network tab) for errors loading the image.
-               - If using local image (e.g., /Logo VETS-new.png):
-                 - VERIFY: The image 'Logo VETS-new.png' is in the 'public' folder at the root of your project.
-                 - EXACT FILENAME: Ensure the filename in 'src' matches EXACTLY (case-sensitive).
-                 - Restart your Next.js development server (npm run dev) after
-                   any changes to 'next.config.ts' or moving files in 'public'.
+               - Check your browser's developer console (Network tab) for errors loading the image.
+               - Verify the URL is correct and accessible.
+               - Restart your Next.js development server (npm run dev) after
+                 any changes to 'next.config.ts'.
             ====================================================================
           */}
           <Image
             src="https://vets.energy/wp-content/themes/vetsenergy/images/logo-vets-ee.svg"
             alt="Vets Energy and Environment Logo"
-            width={180} // Should be the actual width of your logo image
-            height={40} // Should be the actual height of your logo image
+            width={180} // Intrinsic width of the logo SVG
+            height={40} // Intrinsic height of the logo SVG
             className="h-10 w-auto" // Controls displayed size
             data-ai-hint="company logo"
             priority // Preloads the logo as it's LCP.
           />
+          <h1 className="mt-0.5 text-xs font-semibold text-primary">
+            {t('appName')}
+          </h1>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <ThemeToggle />
@@ -59,3 +62,4 @@ export default function AppHeader() {
     </header>
   );
 }
+

@@ -93,7 +93,7 @@ interface LanguageProviderState {
 }
 
 const translations: Record<string, Record<Language, string>> = {
-  appName: { en: 'Energy Audit Writing Assistant', vn: 'Trợ lý Soạn thảo Kiểm toán Năng lượng' },
+  appName: { en: 'Energy Audit Writing Assistant', vn: 'Công cụ hỗ trợ viết báo cáo' },
   inputTextLabel: { en: 'Your Audit Text', vn: 'Nội dung Kiểm toán của Bạn' },
   outputTextLabel: { en: 'Generated Text', vn: 'Nội dung Tạo ra' },
   copyToClipboard: { en: 'Copy to Clipboard', vn: 'Sao chép vào Clipboard' },
