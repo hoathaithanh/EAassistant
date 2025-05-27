@@ -124,13 +124,17 @@ const translations: Record<string, Record<Language, string>> = {
   settingsLabel: { en: 'Setting', vn: 'Cài đặt'},
   setLanguageTo: { en: "Set language to {{lang}}", vn: "Đặt ngôn ngữ thành {{lang}}" },
   toggleThemeLabel: { en: "Toggle theme", vn: "Chuyển đổi giao diện" },
+  aiGeneratedContentWarning: {
+    en: 'AI-generated content may not be entirely accurate or suitable. Please review carefully before use.',
+    vn: 'Nội dung do AI tạo sinh viết có thể chưa sát thực tế, hãy kiểm tra kỹ trước khi sử dụng.'
+  },
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
 
 export function LanguageProvider({
   children,
-  defaultLanguage = 'vn', 
+  defaultLanguage = 'vn',
   storageKey = 'app-language',
 }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(defaultLanguage);
@@ -143,7 +147,7 @@ export function LanguageProvider({
         setLanguageState(storedLanguage);
       } else {
         localStorage.setItem(storageKey, defaultLanguage);
-        if (language !== defaultLanguage) { 
+        if (language !== defaultLanguage) {
             setLanguageState(defaultLanguage);
         }
       }
@@ -153,11 +157,11 @@ export function LanguageProvider({
             setLanguageState(defaultLanguage);
         }
     }
-    setHydrated(true); 
+    setHydrated(true);
   }, [storageKey, defaultLanguage, language]);
 
   const setLanguage = (lang: Language) => {
-    if (hydrated) { 
+    if (hydrated) {
         try {
             localStorage.setItem(storageKey, lang);
         } catch (e) {
@@ -170,7 +174,7 @@ export function LanguageProvider({
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'vn' : 'en');
   };
-  
+
   const t = (key: string, langOrParams?: Language | Record<string, string>) => {
     const effectiveLanguage = hydrated ? language : defaultLanguage;
     let translation = translations[key]?.[effectiveLanguage] || key;
@@ -188,7 +192,7 @@ export function LanguageProvider({
 
 
   const value = useMemo(() => ({
-    language: hydrated ? language : defaultLanguage, 
+    language: hydrated ? language : defaultLanguage,
     setLanguage,
     toggleLanguage,
     t,

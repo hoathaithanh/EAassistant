@@ -48,8 +48,8 @@ export default function AuditAssistantClient() {
       await navigator.clipboard.writeText(textToCopy);
       toast({
         title: t('copied'),
-        description: type === 'output' 
-          ? 'The generated text has been copied to your clipboard.' 
+        description: type === 'output'
+          ? 'The generated text has been copied to your clipboard.'
           : 'The research results have been copied to your clipboard.',
         duration: 3000,
       });
@@ -97,7 +97,7 @@ export default function AuditAssistantClient() {
         description: (error as Error).message || 'Unknown error',
         variant: 'destructive',
       });
-      if (aiFunction !== deepResearch) setOutputText(''); 
+      if (aiFunction !== deepResearch) setOutputText('');
       else setDeepResearchResults([]);
     } finally {
       setLoadingState(false);
@@ -144,7 +144,7 @@ export default function AuditAssistantClient() {
       setIsDeepResearchLoading
     );
   };
-  
+
   const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
   const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
 
@@ -154,7 +154,7 @@ export default function AuditAssistantClient() {
   }, [language, t]);
 
   const formatDeepResearchResultsForCopy = (results: ResearchResult[]): string => {
-    return results.map(result => 
+    return results.map(result =>
       `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.link}`
     ).join('\n\n');
   };
@@ -185,20 +185,20 @@ export default function AuditAssistantClient() {
         <CardHeader>
           <CardTitle className="flex items-center text-lg">
             <Settings2 className="mr-2 h-5 w-5 text-primary" />
-            {t('aiToolsLabel')} 
+            {t('aiToolsLabel')}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button onClick={handleRewrite} disabled={isLoading || isDeepResearchLoading} className="w-full justify-start text-left py-6">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+            {isLoading && !isDeepResearchLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
             {t('rewrite')}
           </Button>
           <Button onClick={handleExpand} disabled={isLoading || isDeepResearchLoading} className="w-full justify-start text-left py-6">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TextSearch className="mr-2 h-4 w-4" />}
+            {isLoading && !isDeepResearchLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TextSearch className="mr-2 h-4 w-4" />}
             {t('expand')}
           </Button>
           <Button onClick={handleSummarize} disabled={isLoading || isDeepResearchLoading} className="w-full justify-start text-left py-6">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlignLeft className="mr-2 h-4 w-4" />}
+            {isLoading && !isDeepResearchLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlignLeft className="mr-2 h-4 w-4" />}
             {t('summarize')}
           </Button>
           <div className="space-y-2 flex flex-col justify-between">
@@ -216,13 +216,13 @@ export default function AuditAssistantClient() {
                 </SelectContent>
               </Select>
               <Button onClick={handleChangeTone} disabled={isLoading || isDeepResearchLoading} className="w-full sm:w-auto py-3 flex-shrink-0">
-                {(isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {(isLoading && !isDeepResearchLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('changeTone')}
               </Button>
             </div>
           </div>
         </CardContent>
-         {(isLoading || isDeepResearchLoading) && (
+         {(isLoading && !isDeepResearchLoading) && ( // Only show main processing spinner if not deep research loading
           <CardFooter>
             <p className="text-sm text-muted-foreground flex items-center">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -249,12 +249,15 @@ export default function AuditAssistantClient() {
             rows={10}
           />
         </CardContent>
-        <CardFooter className="flex justify-end">
-           <Button 
-            onClick={() => handleCopyToClipboard(outputText, 'output')} 
-            variant="outline" 
-            size="sm" 
-            className="w-full md:w-auto" 
+        <CardFooter className="flex flex-col items-end space-y-2 px-6 pb-6 pt-4">
+          <p className="text-xs text-muted-foreground text-right w-full">
+            {t('aiGeneratedContentWarning')}
+          </p>
+           <Button
+            onClick={() => handleCopyToClipboard(outputText, 'output')}
+            variant="outline"
+            size="sm"
+            className="w-full md:w-auto"
             disabled={!outputText || isLoading || isDeepResearchLoading}
            >
             <Copy className="mr-2 h-4 w-4" />
@@ -270,8 +273,8 @@ export default function AuditAssistantClient() {
               <Library className="mr-2 h-5 w-5 text-primary" />
               {t('relatedDocumentsTitle')}
             </CardTitle>
-            <Button 
-              onClick={handleDeepResearch} 
+            <Button
+              onClick={handleDeepResearch}
               disabled={!outputText || isLoading || isDeepResearchLoading}
               size="sm"
             >
@@ -313,10 +316,10 @@ export default function AuditAssistantClient() {
         </CardContent>
         {deepResearchResults.length > 0 && !isDeepResearchLoading && (
           <CardFooter className="flex justify-end">
-            <Button 
+            <Button
               onClick={() => handleCopyToClipboard(formatDeepResearchResultsForCopy(deepResearchResults), 'research')}
-              variant="outline" 
-              size="sm" 
+              variant="outline"
+              size="sm"
               className="w-full md:w-auto"
               disabled={isDeepResearchLoading}
             >
