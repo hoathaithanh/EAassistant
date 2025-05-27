@@ -11,34 +11,33 @@ export default function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-12 max-w-screen-2xl items-center">
+      <div className="container flex h-20 max-w-screen-2xl items-center"> {/* Changed h-12 to h-20 */}
         <div className="mr-4 flex flex-col items-start">
           {/*
             ====================================================================
             IMPORTANT - LOGO DISPLAY NOTES:
             ====================================================================
             1. IMAGE SOURCE:
-               The image source is an SVG URL. Ensure your internet
-               connection is active to load it. 
+               The image source is an SVG URL from 'vets.energy'.
 
             2. NEXT.CONFIG.JS:
-               The hostname 'vets.energy' needs to be added to
-               next.config.ts remotePatterns to allow Next.js to optimize this image
-               if it wasn't already from a previous configuration.
-               (Assuming 'images.unsplash.com' and 'placehold.co' are already there).
+               The hostname 'vets.energy' MUST be in next.config.ts
+               remotePatterns for Next.js to optimize this image.
+               This was added in a previous step. If issues persist,
+               ensure your dev server was restarted after that change.
 
             3. IMAGE DIMENSIONS:
-               The 'width' and 'height' props (e.g., 180x40) are crucial.
-               They should match the *actual intrinsic dimensions* of your logo image
-               for optimal performance and to prevent layout shift. Next.js uses these
-               for aspect ratio calculation and optimization. The className
-               'h-10 w-auto' controls the displayed size on the page.
+               - `width={180}` and `height={40}` are the INTRINSIC dimensions
+                 of the source SVG. These are crucial for Next.js optimization
+                 and aspect ratio calculation.
+               - `className="h-10 w-auto"` controls the DISPLAYED size (40px height).
 
-            4. TROUBLESHOOTING:
-               - Check your browser's developer console (Network tab) for errors loading the image.
-               - Verify the URL is correct and accessible.
-               - Restart your Next.js development server (npm run dev) after
-                 any changes to 'next.config.ts'.
+            4. TROUBLESHOOTING LOGO NOT DISPLAYING:
+               - VERIFY THE FULL URL: Is "https://vets.energy/wp-content/themes/vetsenergy/images/logo-vets-ee.svg" accessible in your browser?
+               - CHECK NEXT.CONFIG.TS: Confirm 'vets.energy' is in `images.remotePatterns`.
+               - RESTART DEV SERVER: If you modified next.config.ts, restart `npm run dev`.
+               - BROWSER CONSOLE: Look for network errors related to the image.
+               - CASE SENSITIVITY: If using a local file in /public, ensure filename matches exactly.
             ====================================================================
           */}
           <Image
@@ -50,7 +49,7 @@ export default function AppHeader() {
             data-ai-hint="company logo"
             priority // Preloads the logo as it's LCP.
           />
-          <h1 className="mt-0.5 text-xs font-semibold text-primary">
+          <h1 className="mt-0.5 text-lg font-semibold text-primary"> {/* Changed text-xs to text-lg */}
             {t('appName')}
           </h1>
         </div>
@@ -62,4 +61,3 @@ export default function AppHeader() {
     </header>
   );
 }
-
