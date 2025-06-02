@@ -92,9 +92,16 @@ export default function AuditAssistantClient() {
       successCallback(result);
     } catch (error) {
       console.error('AI call failed:', error);
+      let description = (error as Error).message || t('unknownError');
+      const errorMessage = (error as Error).message?.toLowerCase() || "";
+
+      if (errorMessage.includes('503 service unavailable') || errorMessage.includes('model is overloaded') || errorMessage.includes('overloaded')) {
+        description = t('aiServiceOverloadedError');
+      }
+      
       toast({
         title: t('errorOccurred'),
-        description: (error as Error).message || 'Unknown error',
+        description: description,
         variant: 'destructive',
       });
       if (aiFunction !== deepResearch) setOutputText('');

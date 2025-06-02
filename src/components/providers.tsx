@@ -110,6 +110,11 @@ const translations: Record<string, Record<Language, string>> = {
   friendly: { en: 'Friendly', vn: 'Thân thiện' },
   processing: { en: 'Processing...', vn: 'Đang xử lý...' },
   errorOccurred: { en: 'An error occurred', vn: 'Đã xảy ra lỗi' },
+  unknownError: { en: 'An unknown error occurred.', vn: 'Đã xảy ra lỗi không xác định.'},
+  aiServiceOverloadedError: { 
+    en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.', 
+    vn: 'Dịch vụ AI hiện đang quá tải hoặc không khả dụng. Vui lòng thử lại sau ít phút.' 
+  },
   english: { en: 'English', vn: 'Tiếng Anh' },
   vietnamese: { en: 'Vietnamese', vn: 'Tiếng Việt' },
   inputPlaceholder: { en: 'Enter your audit report content here...', vn: 'Nhập nội dung báo cáo kiểm toán của bạn tại đây...' },
