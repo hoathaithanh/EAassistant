@@ -91,12 +91,18 @@ export default function AuditAssistantClient() {
       const result = await aiFunction(input);
       successCallback(result);
     } catch (error) {
-      console.error('AI call failed:', error);
-      let description = (error as Error).message || t('unknownError');
-      const errorMessage = (error as Error).message?.toLowerCase() || "";
+      console.error('AI call failed:', error); // Log the full error to the console
+      
+      let description = t('unknownError'); // Default user-friendly message
+      const errorObj = error as Error;
+      const errorMessage = errorObj.message?.toLowerCase() || "";
 
       if (errorMessage.includes('503 service unavailable') || errorMessage.includes('model is overloaded') || errorMessage.includes('overloaded')) {
         description = t('aiServiceOverloadedError');
+      } else if (errorObj.message) {
+        // For other errors, still show the original message if it exists,
+        // as it might contain useful context for the user or for reporting.
+        description = errorObj.message;
       }
       
       toast({
@@ -104,6 +110,7 @@ export default function AuditAssistantClient() {
         description: description,
         variant: 'destructive',
       });
+
       if (aiFunction !== deepResearch) setOutputText('');
       else setDeepResearchResults([]);
     } finally {
