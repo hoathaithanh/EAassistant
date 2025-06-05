@@ -34,7 +34,7 @@ export const performWebSearch = ai.defineTool(
   {
     name: 'performWebSearch',
     description:
-      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, homepage links (origins), and snippets. Use this tool to find information on the internet for a given query.',
+      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, homepage links (scheme + hostname), and snippets. Use this tool to find information on the internet for a given query.',
     inputSchema: WebSearchInputSchema,
     outputSchema: WebSearchOutputSchema,
   },
@@ -127,18 +127,18 @@ export const performWebSearch = ai.defineTool(
           const originalLink = item.link || 'N/A (Link not provided by API)';
           let displayLink = '#'; // Default to '#'
 
-          if (item.link) { // Ensure item.link exists and is a string
+          if (typeof item.link === 'string' && item.link.trim() !== '') {
             try {
-              const parsedUrl = new URL(item.link); // Try to parse it
-              displayLink = parsedUrl.origin; // Extract the origin (e.g., "https://example.com")
+              const parsedUrl = new URL(item.link);
+              // Explicitly construct the link from protocol and hostname
+              displayLink = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
             } catch (e) {
-              // If parsing fails (e.g., not a valid absolute URL), log and keep '#'
-              console.warn(`[performWebSearch] Could not parse item.link to get origin. Original link: "${originalLink}". Error: ${(e as Error).message}. Falling back to '#'.`);
-              displayLink = '#';
+              console.warn(`[performWebSearch] Could not parse item.link to get scheme and hostname. Original link: "${originalLink}". Error: ${(e as Error).message}. Falling back to '#'.`);
+              displayLink = '#'; // Fallback if parsing fails
             }
           }
           // Log the original link and the processed displayLink
-          console.log(`[performWebSearch] Link processing: Original="${originalLink}", ExtractedOrigin/DisplayLink="${displayLink}"`);
+          console.log(`[performWebSearch] Link processing: Original="${originalLink}", ExtractedSchemeHostname="${displayLink}"`);
 
           return {
             title: item.title || 'N/A',
@@ -148,7 +148,7 @@ export const performWebSearch = ai.defineTool(
         })
         .filter((result: SearchResultItem) => result.link && result.link !== '#'); // Filter out any results that ended up with '#'
 
-      console.log('[performWebSearch] Final mapped results (should contain origins):', JSON.stringify(mappedResults, null, 2));
+      console.log('[performWebSearch] Final mapped results (should contain scheme+hostname):', JSON.stringify(mappedResults, null, 2));
       return { results: mappedResults.slice(0, input.numResults) };
 
     } catch (error: any) {
@@ -165,4 +165,3 @@ export const performWebSearch = ai.defineTool(
     }
   }
 );
-
