@@ -35,12 +35,31 @@ interface ResearchResult {
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
+  const [processedOutputHtml, setProcessedOutputHtml] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeepResearchLoading, setIsDeepResearchLoading] = useState(false);
   const [selectedTone, setSelectedTone] = useState<Tone>('professional');
   const [deepResearchResults, setDeepResearchResults] = useState<ResearchResult[]>([]);
   const { toast } = useToast();
   const { t, language } = useLanguage();
+
+  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
+  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
+
+  useEffect(() => {
+    setInputPlaceholder(t('inputPlaceholder'));
+    setOutputPlaceholder(t('outputPlaceholder'));
+  }, [language, t]);
+
+  useEffect(() => {
+    if (outputText) {
+      const html = outputText.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>');
+      setProcessedOutputHtml(html);
+    } else {
+      setProcessedOutputHtml('');
+    }
+  }, [outputText]);
+
 
   const handleCopyToClipboard = async (textToCopy: string, type: 'output' | 'research') => {
     if (!textToCopy) return;
@@ -170,14 +189,6 @@ export default function AuditAssistantClient() {
     );
   };
 
-  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
-  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
-
-  useEffect(() => {
-    setInputPlaceholder(t('inputPlaceholder'));
-    setOutputPlaceholder(t('outputPlaceholder'));
-  }, [language, t]);
-
   const formatDeepResearchResultsForCopy = (results: ResearchResult[]): string => {
     return results.map(result =>
       `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.link}`
@@ -265,14 +276,17 @@ export default function AuditAssistantClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            id="outputText"
-            value={outputText}
-            readOnly
-            placeholder={outputPlaceholder}
-            className="min-h-[200px] text-base bg-muted/50 rounded-md shadow-sm"
-            rows={10}
-          />
+          <div
+            id="outputTextDisplay"
+            className="min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base shadow-sm whitespace-pre-wrap overflow-auto"
+            aria-live="polite"
+          >
+            {processedOutputHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: processedOutputHtml }} />
+            ) : (
+              <p className="text-muted-foreground">{outputPlaceholder}</p>
+            )}
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col items-end space-y-2 px-6 pb-6 pt-4">
           <p className="text-xs text-muted-foreground text-right w-full">
@@ -357,3 +371,4 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
+
