@@ -34,7 +34,7 @@ export const performWebSearch = ai.defineTool(
   {
     name: 'performWebSearch',
     description:
-      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, homepage links, and snippets. Use this tool to find information on the internet for a given query.',
+      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, homepage links (origins), and snippets. Use this tool to find information on the internet for a given query.',
     inputSchema: WebSearchInputSchema,
     outputSchema: WebSearchOutputSchema,
   },
@@ -90,7 +90,7 @@ export const performWebSearch = ai.defineTool(
 
       const responseText = await response.text(); // Get text first for logging
       console.log(`[performWebSearch] API Response Status: ${response.status}`);
-      console.log(`[performWebSearch] API Raw Response Body: ${responseText}`);
+      console.log(`[performWebSearch] API Raw Response Body (first 500 chars): ${responseText.substring(0, 500)}`);
 
 
       if (!response.ok) {
@@ -124,25 +124,31 @@ export const performWebSearch = ai.defineTool(
 
       const mappedResults: SearchResultItem[] = data.items
         .map((item: any) => {
-          let displayLink = '#';
-          if (item.link) {
+          const originalLink = item.link || 'N/A (Link not provided by API)';
+          let displayLink = '#'; // Default to '#'
+
+          if (item.link) { // Ensure item.link exists and is a string
             try {
-              const parsedUrl = new URL(item.link);
-              displayLink = parsedUrl.origin; // Get "https://example.com"
+              const parsedUrl = new URL(item.link); // Try to parse it
+              displayLink = parsedUrl.origin; // Extract the origin (e.g., "https://example.com")
             } catch (e) {
-              console.warn(`[performWebSearch] Could not parse item.link to get origin: "${item.link}". Error: ${e}. Falling back to '#'.`);
-              displayLink = '#'; // Fallback if URL parsing fails
+              // If parsing fails (e.g., not a valid absolute URL), log and keep '#'
+              console.warn(`[performWebSearch] Could not parse item.link to get origin. Original link: "${originalLink}". Error: ${(e as Error).message}. Falling back to '#'.`);
+              displayLink = '#';
             }
           }
+          // Log the original link and the processed displayLink
+          console.log(`[performWebSearch] Link processing: Original="${originalLink}", ExtractedOrigin/DisplayLink="${displayLink}"`);
+
           return {
             title: item.title || 'N/A',
-            link: displayLink,
+            link: displayLink, // This 'link' is what the flow receives
             snippet: item.snippet || item.htmlSnippet || 'N/A',
           };
         })
-        .filter((result: SearchResultItem) => result.link && result.link !== '#'); // Keep filtering out items that ended up with '#' if truly no usable link
+        .filter((result: SearchResultItem) => result.link && result.link !== '#'); // Filter out any results that ended up with '#'
 
-      console.log('[performWebSearch] Mapped results:', JSON.stringify(mappedResults, null, 2));
+      console.log('[performWebSearch] Final mapped results (should contain origins):', JSON.stringify(mappedResults, null, 2));
       return { results: mappedResults.slice(0, input.numResults) };
 
     } catch (error: any) {
