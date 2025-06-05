@@ -111,9 +111,9 @@ const translations: Record<string, Record<Language, string>> = {
   processing: { en: 'Processing...', vn: 'Đang xử lý...' },
   errorOccurred: { en: 'An error occurred', vn: 'Đã xảy ra lỗi' },
   unknownError: { en: 'An unknown error occurred.', vn: 'Đã xảy ra lỗi không xác định.'},
-  aiServiceOverloadedError: { 
-    en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.', 
-    vn: 'Dịch vụ AI hiện đang quá tải hoặc không khả dụng. Vui lòng thử lại sau ít phút.' 
+  aiServiceOverloadedError: {
+    en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.',
+    vn: 'Dịch vụ AI hiện đang quá tải hoặc không khả dụng. Vui lòng thử lại sau ít phút.'
   },
   english: { en: 'English', vn: 'Tiếng Anh' },
   vietnamese: { en: 'Vietnamese', vn: 'Tiếng Việt' },
@@ -146,27 +146,28 @@ export function LanguageProvider({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let finalLanguage = defaultLanguage; // Start with default
     try {
-      const storedLanguage = localStorage.getItem(storageKey) as Language;
-      if (storedLanguage && translations['appName'][storedLanguage]) {
-        setLanguageState(storedLanguage);
+      const storedLanguage = localStorage.getItem(storageKey) as Language | null;
+      // Check if storedLanguage is valid (exists in our translations)
+      if (storedLanguage && translations['appName']?.[storedLanguage]) {
+        finalLanguage = storedLanguage;
       } else {
+        // If storedLanguage is null, invalid, or not in translations,
+        // then use defaultLanguage and update localStorage to reflect this default.
         localStorage.setItem(storageKey, defaultLanguage);
-        if (language !== defaultLanguage) {
-            setLanguageState(defaultLanguage);
-        }
+        // finalLanguage is already defaultLanguage
       }
     } catch (e) {
-        console.error("Failed to access localStorage for language setting:", e);
-        if (language !== defaultLanguage) {
-            setLanguageState(defaultLanguage);
-        }
+      console.error("Failed to access localStorage for language setting:", e);
+      // If localStorage access fails, finalLanguage remains defaultLanguage.
     }
+    setLanguageState(finalLanguage);
     setHydrated(true);
-  }, [storageKey, defaultLanguage, language]);
+  }, [storageKey, defaultLanguage]); // Dependencies only on props that define how state is initialized
 
   const setLanguage = (lang: Language) => {
-    if (hydrated) {
+    if (hydrated) { // Only allow setting language after hydration
         try {
             localStorage.setItem(storageKey, lang);
         } catch (e) {
@@ -181,6 +182,9 @@ export function LanguageProvider({
   };
 
   const t = (key: string, langOrParams?: Language | Record<string, string>) => {
+    // During SSR and initial client render (before useEffect runs), 'hydrated' is false,
+    // so 'defaultLanguage' is used.
+    // After 'useEffect' runs on the client, 'hydrated' becomes true, and 'language' (from localStorage or default) is used.
     const effectiveLanguage = hydrated ? language : defaultLanguage;
     let translation = translations[key]?.[effectiveLanguage] || key;
 
@@ -189,7 +193,6 @@ export function LanguageProvider({
         translation = translation.replace(new RegExp(`{{${paramKey}}}`, 'g'), paramValue);
       });
     } else if (typeof langOrParams === 'string' && translations[key]?.[langOrParams]) {
-      // Fallback for simple language override if params not used
       translation = translations[key]?.[langOrParams] || key;
     }
     return translation;
@@ -201,7 +204,7 @@ export function LanguageProvider({
     setLanguage,
     toggleLanguage,
     t,
-  }), [language, hydrated, defaultLanguage]);
+  }), [language, hydrated, defaultLanguage]); // Include all dependencies of the memoized value
 
   return (
     <LanguageProviderContext.Provider value={value}>
