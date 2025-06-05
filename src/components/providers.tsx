@@ -98,6 +98,10 @@ const translations: Record<string, Record<Language, string>> = {
   outputTextLabel: { en: 'Generated Text', vn: 'Nội dung Tạo ra' },
   copyToClipboard: { en: 'Copy to Clipboard', vn: 'Sao chép vào Clipboard' },
   copied: { en: 'Copied to clipboard!', vn: 'Đã sao chép!' },
+  copiedOutputDescription: { en: 'The generated text has been copied to your clipboard.', vn: 'Nội dung tạo ra đã được sao chép vào bộ nhớ tạm.' },
+  copiedResearchDescription: { en: 'The research results have been copied to your clipboard.', vn: 'Kết quả tìm kiếm đã được sao chép vào bộ nhớ tạm.' },
+  failedToCopy: { en: 'Failed to copy text to clipboard.', vn: 'Không thể sao chép nội dung.' },
+  clipboardApiUnavailable: { en: 'Clipboard access is unavailable. This may require HTTPS or browser permissions.', vn: 'Không thể truy cập clipboard. Tính năng này có thể yêu cầu HTTPS hoặc quyền truy cập của trình duyệt.' },
   rewrite: { en: 'Rewrite', vn: 'Viết lại' },
   expand: { en: 'Expand', vn: 'Mở rộng' },
   summarize: { en: 'Summarize', vn: 'Tóm tắt' },
@@ -120,6 +124,10 @@ const translations: Record<string, Record<Language, string>> = {
   inputPlaceholder: { en: 'Enter your audit report content here...', vn: 'Nhập nội dung báo cáo kiểm toán của bạn tại đây...' },
   outputPlaceholder: { en: 'AI generated content will appear here...', vn: 'Nội dung do AI tạo sẽ xuất hiện ở đây...' },
   aiToolsLabel: { en: 'AI Tools', vn: 'Công cụ AI'},
+  inputRequiredTitle: { en: 'Input Required', vn: 'Yêu cầu nhập liệu' },
+  inputRequiredDescription: { en: 'Please enter some text to process.', vn: 'Vui lòng nhập nội dung để xử lý.' },
+  generatedTextRequiredTitle: { en: 'Generated Text Required', vn: 'Yêu cầu nội dung đã tạo' },
+  generatedTextRequiredDescription: { en: 'Please generate some text first before searching for related documents.', vn: 'Vui lòng tạo nội dung trước khi tìm kiếm tài liệu liên quan.' },
   searchRelatedDocuments: { en: 'Search for Related Documents', vn: 'Tìm kiếm tài liệu liên quan'},
   relatedDocumentsTitle: { en: 'Related Documents', vn: 'Tài liệu Liên quan'},
   noDocumentsFound: { en: 'No documents found.', vn: 'Không tìm thấy tài liệu nào.'},
@@ -146,28 +154,23 @@ export function LanguageProvider({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    let finalLanguage = defaultLanguage; // Start with default
+    let finalLanguage = defaultLanguage; 
     try {
       const storedLanguage = localStorage.getItem(storageKey) as Language | null;
-      // Check if storedLanguage is valid (exists in our translations)
       if (storedLanguage && translations['appName']?.[storedLanguage]) {
         finalLanguage = storedLanguage;
       } else {
-        // If storedLanguage is null, invalid, or not in translations,
-        // then use defaultLanguage and update localStorage to reflect this default.
         localStorage.setItem(storageKey, defaultLanguage);
-        // finalLanguage is already defaultLanguage
       }
     } catch (e) {
       console.error("Failed to access localStorage for language setting:", e);
-      // If localStorage access fails, finalLanguage remains defaultLanguage.
     }
     setLanguageState(finalLanguage);
     setHydrated(true);
-  }, [storageKey, defaultLanguage]); // Dependencies only on props that define how state is initialized
+  }, [storageKey, defaultLanguage]);
 
   const setLanguage = (lang: Language) => {
-    if (hydrated) { // Only allow setting language after hydration
+    if (hydrated) { 
         try {
             localStorage.setItem(storageKey, lang);
         } catch (e) {
@@ -182,9 +185,6 @@ export function LanguageProvider({
   };
 
   const t = (key: string, langOrParams?: Language | Record<string, string>) => {
-    // During SSR and initial client render (before useEffect runs), 'hydrated' is false,
-    // so 'defaultLanguage' is used.
-    // After 'useEffect' runs on the client, 'hydrated' becomes true, and 'language' (from localStorage or default) is used.
     const effectiveLanguage = hydrated ? language : defaultLanguage;
     let translation = translations[key]?.[effectiveLanguage] || key;
 
@@ -204,7 +204,7 @@ export function LanguageProvider({
     setLanguage,
     toggleLanguage,
     t,
-  }), [language, hydrated, defaultLanguage]); // Include all dependencies of the memoized value
+  }), [language, hydrated, defaultLanguage]); 
 
   return (
     <LanguageProviderContext.Provider value={value}>

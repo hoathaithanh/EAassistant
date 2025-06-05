@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles, Library, Link as LinkIcon, Search } from 'lucide-react';
+import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles, Library, Link as LinkIcon, Search, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/components/providers';
 
 import { rewriteAuditReport, type RewriteAuditReportInput } from '@/ai/flows/rewrite-audit-report';
@@ -44,20 +44,33 @@ export default function AuditAssistantClient() {
 
   const handleCopyToClipboard = async (textToCopy: string, type: 'output' | 'research') => {
     if (!textToCopy) return;
+
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+      console.warn(
+        'Clipboard API (navigator.clipboard.writeText) is not available. This usually requires a secure context (HTTPS) or specific browser permissions.'
+      );
+      toast({
+        title: t('errorOccurred'),
+        description: t('clipboardApiUnavailable'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(textToCopy);
       toast({
         title: t('copied'),
         description: type === 'output'
-          ? 'The generated text has been copied to your clipboard.'
-          : 'The research results have been copied to your clipboard.',
+          ? t('copiedOutputDescription')
+          : t('copiedResearchDescription'),
         duration: 3000,
       });
     } catch (error) {
       console.error('Failed to copy text: ', error);
       toast({
         title: t('errorOccurred'),
-        description: 'Failed to copy text to clipboard.',
+        description: t('failedToCopy'),
         variant: 'destructive',
       });
     }
@@ -71,16 +84,16 @@ export default function AuditAssistantClient() {
   ) => {
     if (!inputText.trim() && aiFunction !== deepResearch) { // inputText check not needed for deep research (uses outputText)
       toast({
-        title: 'Input Required',
-        description: 'Please enter some text to process.',
+        title: t('inputRequiredTitle'),
+        description: t('inputRequiredDescription'),
         variant: 'destructive',
       });
       return;
     }
     if (aiFunction === deepResearch && !outputText.trim()) {
       toast({
-        title: 'Generated Text Required',
-        description: 'Please generate some text first before searching for related documents.',
+        title: t('generatedTextRequiredTitle'),
+        description: t('generatedTextRequiredDescription'),
         variant: 'destructive',
       });
       return;
@@ -100,8 +113,6 @@ export default function AuditAssistantClient() {
       if (errorMessage.includes('503 service unavailable') || errorMessage.includes('model is overloaded') || errorMessage.includes('overloaded')) {
         description = t('aiServiceOverloadedError');
       } else if (errorObj.message) {
-        // For other errors, still show the original message if it exists,
-        // as it might contain useful context for the user or for reporting.
         description = errorObj.message;
       }
       
