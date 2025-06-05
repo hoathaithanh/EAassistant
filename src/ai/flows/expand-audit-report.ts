@@ -3,6 +3,8 @@
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for expanding sections of an energy audit report using GenAI.
+ * It includes a relevancy check: if the input text is not related to energy auditing,
+ * a warning message is prepended to the output.
  *
  * - expandAuditReport - A function that expands the given text by adding relevant details and suggestions.
  * - ExpandAuditReportInput - The input type for the expandAuditReport function.
@@ -19,7 +21,7 @@ const ExpandAuditReportInputSchema = z.object({
 export type ExpandAuditReportInput = z.infer<typeof ExpandAuditReportInputSchema>;
 
 const ExpandAuditReportOutputSchema = z.object({
-  expandedText: z.string().describe('The expanded text with added details and suggestions.'),
+  expandedText: z.string().describe('The expanded text with added details and suggestions. May include a warning if the input text was not relevant to energy auditing.'),
 });
 export type ExpandAuditReportOutput = z.infer<typeof ExpandAuditReportOutputSchema>;
 
@@ -32,10 +34,24 @@ const expandAuditReportPrompt = ai.definePrompt({
   input: {schema: ExpandAuditReportInputSchema},
   output: {schema: ExpandAuditReportOutputSchema},
   prompt: `You are a senior energy consultant with extensive experience in practical energy-saving solutions.
-Expand the following section of an energy audit report by adding relevant details, suggestions, and context based on your expertise.
-Generate the response in the following language: {{{outputLanguage}}}.
+Your primary task is to expand the following section of an energy audit report.
 
-Original Text: {{{text}}}
+However, before expanding, you MUST first analyze the 'Original Text' provided below to determine if it is primarily related to energy auditing, energy efficiency, building science, renewable energy, or energy consulting.
+
+If the 'Original Text' IS NOT primarily related to these energy topics, your response for 'expandedText' MUST begin with a specific warning message, followed by your attempt to expand the text.
+The warning message depends on the '{{{outputLanguage}}}':
+- If '{{{outputLanguage}}}' is 'vn', use this exact warning: 'Tôi là AI agent chỉ được đào tạo chuyên môn sâu về lĩnh vực kiểm toán năng lượng, nội dung của bạn yêu cầu ít liên quan đến chuyên môn của tôi. Vì vậy các nội dung dưới đây chỉ mang tính chất tham khảo: '
+- If '{{{outputLanguage}}}' is 'en', use this exact warning: 'I am an AI agent with deep expertise in energy auditing. Your request seems less related to my specialty. Therefore, the following content is for reference purposes only: '
+- For any other '{{{outputLanguage}}}', translate the core meaning of the English warning ("I am an AI agent with deep expertise in energy auditing. Your request seems less related to my specialty. Therefore, the following content is for reference purposes only:") into the requested '{{{outputLanguage}}}'.
+
+If the 'Original Text' IS primarily related to energy topics, do NOT include the warning message. Simply proceed to expand the text.
+
+After the relevancy check (and prepending the warning if necessary), expand the 'Original Text' by adding relevant details, suggestions, and context based on your expertise. Even if the text was deemed not directly related to energy, try to provide a helpful and general expansion of the given text.
+
+Generate the entire response, including any warning and the expanded text, in the '{{{outputLanguage}}}'.
+
+Original Text:
+{{{text}}}
 
 Expanded Text:`,
 });
