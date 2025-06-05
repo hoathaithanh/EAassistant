@@ -12,7 +12,7 @@ import {
   WebSearchOutputSchema,
   type WebSearchInput,
   type WebSearchOutput,
-  type SearchResultItemSchema as SearchResultItem, // Renamed to avoid conflict
+  type SearchResultItem, // Use the explicitly exported type
 } from '@/ai/schemas/web-search-schemas';
 
 // Ensure you have these in your .env file
@@ -47,7 +47,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi cấu hình API',
-            link: '#',
+            displayLink: '#',
             snippet:
               'SEARCH_API_KEY (Google CSE API Key) chưa được cấu hình trong biến môi trường. Vui lòng kiểm tra tệp .env.',
           },
@@ -60,7 +60,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi cấu hình CSE ID',
-            link: '#',
+            displayLink: '#',
             snippet:
               'SEARCH_ENGINE_ID (Google CSE ID) chưa được cấu hình trong biến môi trường. Vui lòng kiểm tra tệp .env.',
           },
@@ -108,7 +108,7 @@ export const performWebSearch = ai.defineTool(
           results: [
             {
               title: 'Lỗi khi tìm kiếm trên Web',
-              link: '#',
+              displayLink: '#',
               snippet: friendlyMessage,
             },
           ],
@@ -123,32 +123,32 @@ export const performWebSearch = ai.defineTool(
       }
 
       const mappedResults: SearchResultItem[] = data.items
-        .map((item: any) => {
+        .map((item: any): SearchResultItem => { // Ensure the return type matches the schema
           const originalLink = item.link || 'N/A (Link not provided by API)';
-          let displayLink = '#'; // Default to '#'
+          let processedSchemeHostname = '#'; // Default to '#'
 
           if (typeof item.link === 'string' && item.link.trim() !== '') {
             try {
               const parsedUrl = new URL(item.link);
               // Explicitly construct the link from protocol and hostname
-              displayLink = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
+              processedSchemeHostname = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
             } catch (e) {
               console.warn(`[performWebSearch] Could not parse item.link to get scheme and hostname. Original link: "${originalLink}". Error: ${(e as Error).message}. Falling back to '#'.`);
-              displayLink = '#'; // Fallback if parsing fails
+              processedSchemeHostname = '#'; // Fallback if parsing fails
             }
           }
           // Log the original link and the processed displayLink
-          console.log(`[performWebSearch] Link processing: Original="${originalLink}", ExtractedSchemeHostname="${displayLink}"`);
+          console.log(`[performWebSearch] Link processing: Original="${originalLink}", ExtractedSchemeHostname="${processedSchemeHostname}"`);
 
           return {
             title: item.title || 'N/A',
-            link: displayLink, // This 'link' is what the flow receives
+            displayLink: processedSchemeHostname, // Use the new field name 'displayLink'
             snippet: item.snippet || item.htmlSnippet || 'N/A',
           };
         })
-        .filter((result: SearchResultItem) => result.link && result.link !== '#'); // Filter out any results that ended up with '#'
+        .filter((result: SearchResultItem) => result.displayLink && result.displayLink !== '#');
 
-      console.log('[performWebSearch] Final mapped results (should contain scheme+hostname):', JSON.stringify(mappedResults, null, 2));
+      console.log('[performWebSearch] Final mapped results (should contain scheme+hostname in displayLink):', JSON.stringify(mappedResults, null, 2));
       return { results: mappedResults.slice(0, input.numResults) };
 
     } catch (error: any) {
@@ -157,7 +157,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi thực thi tìm kiếm trên Web',
-            link: '#',
+            displayLink: '#',
             snippet: `Đã xảy ra lỗi khi thực hiện tìm kiếm: ${error.message}`,
           },
         ],

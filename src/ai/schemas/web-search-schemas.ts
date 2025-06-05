@@ -14,7 +14,7 @@ export type WebSearchInput = z.infer<typeof WebSearchInputSchema>;
 
 export const SearchResultItemSchema = z.object({
   title: z.string().describe('The title of the search result.'),
-  link: z.string().describe('The homepage URL (origin) of the search result. This should be a real, clickable link to the main site.'),
+  displayLink: z.string().describe('The homepage URL (scheme + hostname) of the search result. This should be a real, clickable link to the main site.'),
   snippet: z.string().describe('A relevant snippet from the search result content.'),
 });
 
@@ -23,3 +23,5 @@ export const WebSearchOutputSchema = z.object({
 });
 export type WebSearchOutput = z.infer<typeof WebSearchOutputSchema>;
 
+// Explicitly infer the type for a single search result item for use in the tool
+export type SearchResultItem = z.infer<typeof SearchResultItemSchema>;

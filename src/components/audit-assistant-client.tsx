@@ -29,7 +29,7 @@ const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humo
 interface ResearchResult {
   title: string;
   snippet: string;
-  link: string;
+  displayLink: string; // Changed from 'link' to 'displayLink'
 }
 
 export default function AuditAssistantClient() {
@@ -184,14 +184,18 @@ export default function AuditAssistantClient() {
     makeAICall(
       deepResearch,
       { inputText: outputText, outputLanguage: language } as DeepResearchInput,
-      (output: DeepResearchOutput) => setDeepResearchResults(output.results || []),
+      (output: DeepResearchOutput) => {
+        // The 'results' from DeepResearchOutput should now have 'displayLink'
+        // The local ResearchResult interface also expects 'displayLink'
+        setDeepResearchResults(output.results || []) 
+      },
       setIsDeepResearchLoading
     );
   };
 
   const formatDeepResearchResultsForCopy = (results: ResearchResult[]): string => {
     return results.map(result =>
-      `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.link}`
+      `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.displayLink}` // Use displayLink here
     ).join('\n\n');
   };
 
@@ -339,7 +343,7 @@ export default function AuditAssistantClient() {
                   <h3 className="font-semibold text-md mb-1 text-primary">{result.title}</h3>
                   <p className="text-sm text-foreground/90 mb-2">{result.snippet}</p>
                   <a
-                    href={result.link}
+                    href={result.displayLink} // Changed to displayLink
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center text-sm text-accent hover:text-accent/80 hover:underline"
@@ -371,4 +375,3 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
-
