@@ -14,11 +14,12 @@ export type WebSearchInput = z.infer<typeof WebSearchInputSchema>;
 
 export const SearchResultItemSchema = z.object({
   title: z.string().describe('The title of the search result.'),
-  link: z.string().describe('The direct URL to the search result. This should be a real, clickable link.'),
+  link: z.string().describe('The homepage URL (origin) of the search result. This should be a real, clickable link to the main site.'),
   snippet: z.string().describe('A relevant snippet from the search result content.'),
 });
 
 export const WebSearchOutputSchema = z.object({
-  results: z.array(SearchResultItemSchema).describe('An array of search results.'),
+  results: z.array(SearchResultItemSchema).describe('An array of search results, with links pointing to homepages.'),
 });
 export type WebSearchOutput = z.infer<typeof WebSearchOutputSchema>;
+

@@ -12,7 +12,7 @@ import {
   WebSearchOutputSchema,
   type WebSearchInput,
   type WebSearchOutput,
-  type SearchResultItemSchema as SearchResultItem,
+  type SearchResultItemSchema as SearchResultItem, // Renamed to avoid conflict
 } from '@/ai/schemas/web-search-schemas';
 
 // Ensure you have these in your .env file
@@ -34,7 +34,7 @@ export const performWebSearch = ai.defineTool(
   {
     name: 'performWebSearch',
     description:
-      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, links, and snippets. Use this tool to find information on the internet for a given query.',
+      'Performs a web search using the Google Custom Search JSON API and returns a list of relevant documents with titles, homepage links, and snippets. Use this tool to find information on the internet for a given query.',
     inputSchema: WebSearchInputSchema,
     outputSchema: WebSearchOutputSchema,
   },
@@ -123,12 +123,24 @@ export const performWebSearch = ai.defineTool(
       }
 
       const mappedResults: SearchResultItem[] = data.items
-        .map((item: any) => ({
-          title: item.title || 'N/A',
-          link: item.link || '#', // Ensure link is always present
-          snippet: item.snippet || item.htmlSnippet || 'N/A',
-        }))
-        .filter((result: SearchResultItem) => result.link && result.link !== '#');
+        .map((item: any) => {
+          let displayLink = '#';
+          if (item.link) {
+            try {
+              const parsedUrl = new URL(item.link);
+              displayLink = parsedUrl.origin; // Get "https://example.com"
+            } catch (e) {
+              console.warn(`[performWebSearch] Could not parse item.link to get origin: "${item.link}". Error: ${e}. Falling back to '#'.`);
+              displayLink = '#'; // Fallback if URL parsing fails
+            }
+          }
+          return {
+            title: item.title || 'N/A',
+            link: displayLink,
+            snippet: item.snippet || item.htmlSnippet || 'N/A',
+          };
+        })
+        .filter((result: SearchResultItem) => result.link && result.link !== '#'); // Keep filtering out items that ended up with '#' if truly no usable link
 
       console.log('[performWebSearch] Mapped results:', JSON.stringify(mappedResults, null, 2));
       return { results: mappedResults.slice(0, input.numResults) };
@@ -147,3 +159,4 @@ export const performWebSearch = ai.defineTool(
     }
   }
 );
+
