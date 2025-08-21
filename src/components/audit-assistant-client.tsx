@@ -54,7 +54,9 @@ export default function AuditAssistantClient() {
 
   useEffect(() => {
     if (typeof outputText === 'string') {
-      const html = outputText.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>');
+      const boldAndItalicProcessed = outputText.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>');
+      // Wrap in <pre><code> for preformatted text styling and copy/paste fidelity
+      const html = `<pre><code>${boldAndItalicProcessed}</code></pre>`;
       setProcessedOutputHtml(html);
     } else {
       setProcessedOutputHtml('');
@@ -272,7 +274,7 @@ export default function AuditAssistantClient() {
         </CardHeader>
         <CardContent>
           <div
-            className="prose dark:prose-invert min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+            className="prose dark:prose-invert prose-pre:whitespace-pre-wrap min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
             dangerouslySetInnerHTML={{ __html: processedOutputHtml || `<p class="text-muted-foreground">${outputPlaceholder}</p>`}}
           />
         </CardContent>
@@ -359,3 +361,5 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
+
+    
