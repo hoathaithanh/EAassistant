@@ -12,12 +12,15 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelParametersSchema } from '@/ai/schemas/model-parameters-schema';
+
 
 const SummarizeAuditReportInputSchema = z.object({
   reportSection: z
     .string()
     .describe('A section of an energy audit report to summarize.'),
   outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
+  config: ModelParametersSchema.optional(),
 });
 export type SummarizeAuditReportInput = z.infer<
   typeof SummarizeAuditReportInputSchema

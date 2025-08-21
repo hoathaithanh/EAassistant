@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { ReactNode } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 // Theme Provider
@@ -128,6 +128,40 @@ const translations: Record<string, Record<Language, string>> = {
     en: 'AI-generated content may not be entirely accurate or suitable. Please review carefully before use.',
     vn: 'Nội dung do AI tạo sinh viết có thể chưa sát thực tế, hãy kiểm tra kỹ trước khi sử dụng.'
   },
+  legacyCopySuccess: {
+    en: 'Text copied using fallback method.',
+    vn: 'Đã sao chép văn bản bằng phương pháp dự phòng.',
+  },
+  clipboardApiError: {
+    en: 'Copy to clipboard failed. This feature requires a secure (HTTPS) connection or specific browser permissions.',
+    vn: 'Sao chép vào clipboard thất bại. Tính năng này yêu cầu kết nối an toàn (HTTPS) hoặc quyền trình duyệt cụ thể.',
+  },
+  llmParameters: { en: 'LLM Parameters', vn: 'Tham số LLM' },
+  themeLabel: { en: 'Theme', vn: 'Giao diện' },
+  temperature: { en: 'Temperature', vn: 'Nhiệt độ' },
+  temperatureDescription: {
+    en: 'Controls randomness. Lower is more predictable.',
+    vn: 'Kiểm soát sự ngẫu nhiên. Càng thấp càng dễ đoán.',
+  },
+  topP: { en: 'Top P', vn: 'Top P' },
+  topPDescription: {
+    en: 'Nucleus sampling. Considers a smaller, more probable set of words.',
+    vn: 'Lấy mẫu hạt nhân. Xem xét một tập hợp từ nhỏ hơn, có xác suất cao hơn.',
+  },
+  topK: { en: 'Top K', vn: 'Top K' },
+  topKDescription: {
+    en: 'Filters to the K most likely next words.',
+    vn: 'Lọc K từ tiếp theo có khả năng xảy ra cao nhất.',
+  },
+  maxOutputTokens: { en: 'Max Tokens', vn: 'Tokens tối đa' },
+  maxOutputTokensDescription: {
+    en: 'Maximum number of tokens to generate.',
+    vn: 'Số lượng tokens tối đa để tạo.',
+  },
+  aiServiceOverloadedError: {
+    en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.',
+    vn: 'Dịch vụ AI hiện đang quá tải hoặc không khả dụng. Vui lòng thử lại sau ít phút.',
+  }
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
@@ -158,7 +192,8 @@ export function LanguageProvider({
         }
     }
     setHydrated(true);
-  }, [storageKey, defaultLanguage, language]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, defaultLanguage]);
 
   const setLanguage = (lang: Language) => {
     if (hydrated) {
@@ -196,6 +231,7 @@ export function LanguageProvider({
     setLanguage,
     toggleLanguage,
     t,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [language, hydrated, defaultLanguage]);
 
   return (
@@ -213,12 +249,69 @@ export const useLanguage = () => {
   return context;
 };
 
+// Model Parameters Provider
+export interface ModelParameters {
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  maxOutputTokens?: number;
+}
+
+interface ModelParametersProviderState {
+  parameters: ModelParameters;
+  setParameters: Dispatch<SetStateAction<ModelParameters>>;
+}
+
+const ModelParametersContext = createContext<ModelParametersProviderState | undefined>(undefined);
+
+export function ModelParametersProvider({ children }: { children: ReactNode }) {
+  const [parameters, setParameters] = useState<ModelParameters>(() => {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+    try {
+      const item = window.localStorage.getItem('model-parameters');
+      return item ? JSON.parse(item) : {};
+    } catch (error) {
+      console.error(error);
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('model-parameters', JSON.stringify(parameters));
+    } catch (error) {
+      console.error(error);
+    }
+  }, [parameters]);
+
+  const value = useMemo(() => ({ parameters, setParameters }), [parameters, setParameters]);
+
+  return (
+    <ModelParametersContext.Provider value={value}>
+      {children}
+    </ModelParametersContext.Provider>
+  );
+}
+
+export const useModelParameters = () => {
+  const context = useContext(ModelParametersContext);
+  if (context === undefined) {
+    throw new Error('useModelParameters must be used within a ModelParametersProvider');
+  }
+  return context;
+};
+
+
 // Combined Providers
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="light" storageKey="energy-audit-theme">
       <LanguageProvider defaultLanguage="vn" storageKey="energy-audit-language">
-        {children}
+        <ModelParametersProvider>
+          {children}
+        </ModelParametersProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

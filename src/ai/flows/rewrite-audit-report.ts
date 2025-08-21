@@ -10,10 +10,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelParametersSchema } from '@/ai/schemas/model-parameters-schema';
 
 const RewriteAuditReportInputSchema = z.object({
   text: z.string().describe('The text from the energy audit report to rewrite.'),
   outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
+  config: ModelParametersSchema.optional(),
 });
 export type RewriteAuditReportInput = z.infer<typeof RewriteAuditReportInputSchema>;
 
@@ -35,6 +37,9 @@ Generate the response in the following language: {{{outputLanguage}}}
 
 Text to rewrite:
 {{{text}}}`,
+  config: {
+    temperature: 0.7, // Default temperature, can be overridden by input.config
+  }
 });
 
 const rewriteAuditReportFlow = ai.defineFlow(
