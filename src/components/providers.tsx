@@ -134,31 +134,35 @@ const translations: Record<string, Record<Language, string>> = {
     en: 'Text copied using fallback method.',
     vn: 'Đã sao chép văn bản bằng phương pháp dự phòng.',
   },
-  clipboardApiError: {
-    en: 'Copy to clipboard failed. This feature requires a secure (HTTPS) connection or specific browser permissions.',
-    vn: 'Sao chép vào clipboard thất bại. Tính năng này yêu cầu kết nối an toàn (HTTPS) hoặc quyền trình duyệt cụ thể.',
+  clipboardApiSuccess: {
+    en: 'Text copied to clipboard.',
+    vn: 'Đã sao chép vào bộ nhớ tạm.',
   },
   llmParameters: { en: 'LLM Parameters', vn: 'Tham số LLM' },
+  llmParametersDescription: { 
+    en: 'Fine-tune the model’s behavior for your specific needs.', 
+    vn: 'Tinh chỉnh hành vi của mô hình cho nhu cầu cụ thể của bạn.' 
+  },
   themeLabel: { en: 'Theme', vn: 'Giao diện' },
   temperature: { en: 'Temperature', vn: 'Nhiệt độ' },
   temperatureDescription: {
-    en: 'Controls randomness. Lower is more predictable.',
-    vn: 'Kiểm soát sự ngẫu nhiên. Càng thấp càng dễ đoán.',
+    en: 'Controls randomness. Lowering the temperature means the model produces more repetitive and deterministic responses. Increasing it leads to more unexpected or creative responses. (Range: 0.0 to 1.0)',
+    vn: 'Kiểm soát tính ngẫu nhiên. Giảm nhiệt độ có nghĩa là mô hình tạo ra các câu trả lời lặp đi lặp lại và xác định hơn. Tăng nhiệt độ dẫn đến các câu trả lời bất ngờ hoặc sáng tạo hơn. (Phạm vi: 0.0 đến 1.0)',
   },
   topP: { en: 'Top P', vn: 'Top P' },
   topPDescription: {
-    en: 'Nucleus sampling. Considers a smaller, more probable set of words.',
-    vn: 'Lấy mẫu hạt nhân. Xem xét một tập hợp từ nhỏ hơn, có xác suất cao hơn.',
+    en: 'Controls diversity via nucleus sampling. Top-p considers the results of the tokens with the highest probability mass. A lower value filters out less likely tokens, making the output more focused and deterministic. (Range: 0.0 to 1.0)',
+    vn: 'Kiểm soát sự đa dạng thông qua lấy mẫu hạt nhân. Top-p xem xét kết quả của các token có khối lượng xác suất cao nhất. Giá trị thấp hơn sẽ lọc ra các token ít có khả năng hơn, làm cho đầu ra tập trung và xác định hơn. (Phạm vi: 0.0 đến 1.0)',
   },
   topK: { en: 'Top K', vn: 'Top K' },
   topKDescription: {
-    en: 'Filters to the K most likely next words.',
-    vn: 'Lọc K từ tiếp theo có khả năng xảy ra cao nhất.',
+    en: 'Controls diversity by filtering to the K most likely next tokens. A lower value makes the output more focused and deterministic. For example, a value of 1 means the next token is always the most likely. (Range: 1 to 100)',
+    vn: 'Kiểm soát sự đa dạng bằng cách lọc K token tiếp theo có khả năng xảy ra cao nhất. Giá trị thấp hơn làm cho đầu ra tập trung và xác định hơn. Ví dụ, giá trị 1 có nghĩa là token tiếp theo luôn là token có khả năng xảy ra cao nhất. (Phạm vi: 1 đến 100)',
   },
   maxOutputTokens: { en: 'Max Tokens', vn: 'Tokens tối đa' },
   maxOutputTokensDescription: {
-    en: 'Maximum number of tokens to generate.',
-    vn: 'Số lượng tokens tối đa để tạo.',
+    en: 'Sets the maximum number of tokens to generate in the response. A token is approximately four characters. The actual output may be shorter. (Range: 1 to 8192)',
+    vn: 'Đặt số lượng token tối đa để tạo trong phản hồi. Một token tương đương khoảng bốn ký tự. Đầu ra thực tế có thể ngắn hơn. (Phạm vi: 1 đến 8192)',
   },
   aiServiceOverloadedError: {
     en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.',

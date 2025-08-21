@@ -12,6 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useModelParameters, useLanguage } from "@/components/providers";
 import type { ModelParameters } from "@/ai/schemas/model-parameters-schema";
+import { HelpCircle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ModelParametersSheetProps {
   open: boolean;
@@ -34,6 +41,7 @@ export default function ModelParametersSheet({
     label,
     description,
     value,
+    min,
     max,
     step,
     onValueChange,
@@ -42,21 +50,33 @@ export default function ModelParametersSheet({
     label: string;
     description: string;
     value: number;
+    min: number;
     max: number;
     step: number;
     onValueChange: (value: number[]) => void;
   }) => (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Label htmlFor={id} className="text-lg">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={id} className="flex items-center gap-2 text-base font-medium">
           {label}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">{description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Label>
-        <span className="text-lg font-semibold w-20 text-right">{value}</span>
+        <div className="w-24 rounded-md border border-input px-2 py-1 text-center font-mono text-base">
+          {value.toFixed(id === 'temperature' || id === 'topP' ? 2 : 0)}
+        </div>
       </div>
-      <p className="text-sm text-muted-foreground">{description}</p>
       <Slider
         id={id}
-        min={0}
+        min={min}
         max={max}
         step={step}
         value={[value]}
@@ -72,7 +92,7 @@ export default function ModelParametersSheet({
         <SheetHeader>
           <SheetTitle className="text-2xl">{t('llmParameters')}</SheetTitle>
           <SheetDescription>
-            {/* You can add a description here if needed */}
+            {t('llmParametersDescription')}
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-8 py-6">
@@ -81,6 +101,7 @@ export default function ModelParametersSheet({
             label={t('temperature')}
             description={t('temperatureDescription')}
             value={parameters.temperature ?? 0.3}
+            min={0}
             max={1}
             step={0.05}
             onValueChange={handleSliderChange('temperature')}
@@ -90,6 +111,7 @@ export default function ModelParametersSheet({
             label={t('topP')}
             description={t('topPDescription')}
             value={parameters.topP ?? 0.3}
+            min={0}
             max={1}
             step={0.05}
             onValueChange={handleSliderChange('topP')}
@@ -99,6 +121,7 @@ export default function ModelParametersSheet({
             label={t('topK')}
             description={t('topKDescription')}
             value={parameters.topK ?? 20}
+            min={1}
             max={100}
             step={1}
             onValueChange={handleSliderChange('topK')}
@@ -108,6 +131,7 @@ export default function ModelParametersSheet({
             label={t('maxOutputTokens')}
             description={t('maxOutputTokensDescription')}
             value={parameters.maxOutputTokens ?? 2048}
+            min={1}
             max={8192}
             step={64}
             onValueChange={handleSliderChange('maxOutputTokens')}
