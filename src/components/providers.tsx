@@ -167,7 +167,8 @@ const translations: Record<string, Record<Language, string>> = {
   aiServiceOverloadedError: {
     en: 'The AI service is currently overloaded or unavailable. Please try again in a few moments.',
     vn: 'Dịch vụ AI hiện đang quá tải hoặc không khả dụng. Vui lòng thử lại sau ít phút.',
-  }
+  },
+  page: { en: 'Page', vn: 'Trang' },
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
@@ -332,3 +333,5 @@ export function AppProviders({ children }: { children: ReactNode }) {
     </ThemeProvider>
   );
 }
+
+    

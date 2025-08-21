@@ -32,6 +32,8 @@ interface ResearchResult {
   displayLink: string;
 }
 
+const CHARS_PER_PAGE = 2500; // Approximate characters for an A4 page
+
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -42,7 +44,9 @@ export default function AuditAssistantClient() {
   const { toast } = useToast();
   const { t, language } = useLanguage();
   const { parameters: modelParameters } = useModelParameters();
-  const [processedOutputHtml, setProcessedOutputHtml] = useState('');
+  
+  const [paginatedOutput, setPaginatedOutput] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
   const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
@@ -53,16 +57,36 @@ export default function AuditAssistantClient() {
   }, [language, t]);
 
   useEffect(() => {
-    if (typeof outputText === 'string') {
-      const boldAndItalicProcessed = outputText.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>');
-      // Wrap in <pre><code> for preformatted text styling and copy/paste fidelity
-      const html = `<pre><code>${boldAndItalicProcessed}</code></pre>`;
-      setProcessedOutputHtml(html);
+    if (typeof outputText === 'string' && outputText) {
+      const pages = [];
+      let remainingText = outputText;
+      while (remainingText.length > 0) {
+        if (remainingText.length <= CHARS_PER_PAGE) {
+          pages.push(remainingText);
+          break;
+        }
+
+        let sliceEnd = CHARS_PER_PAGE;
+        // Try to not cut words/sentences in half
+        const lastPeriod = remainingText.lastIndexOf('.', sliceEnd);
+        const lastSpace = remainingText.lastIndexOf(' ', sliceEnd);
+
+        if (lastPeriod > CHARS_PER_PAGE - 200) { // prefer sentence end
+          sliceEnd = lastPeriod + 1;
+        } else if (lastSpace > CHARS_PER_PAGE - 200) { // or word end
+          sliceEnd = lastSpace + 1;
+        }
+        
+        pages.push(remainingText.substring(0, sliceEnd));
+        remainingText = remainingText.substring(sliceEnd);
+      }
+      setPaginatedOutput(pages.map(page => page.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>')));
+      setCurrentPage(1);
     } else {
-      setProcessedOutputHtml('');
+      setPaginatedOutput([]);
+      setCurrentPage(1);
     }
   }, [outputText]);
-
 
   const handleCopyToClipboard = async (textToCopy: string) => {
     if (!textToCopy) return;
@@ -273,25 +297,41 @@ export default function AuditAssistantClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            className="prose dark:prose-invert prose-pre:whitespace-pre-wrap min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
-            dangerouslySetInnerHTML={{ __html: processedOutputHtml || `<p class="text-muted-foreground">${outputPlaceholder}</p>`}}
+        <div
+            className="prose dark:prose-invert max-w-none min-h-[400px] w-full rounded-md border border-input bg-muted/50 p-6 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: paginatedOutput[currentPage - 1] || `<p class="text-muted-foreground">${outputPlaceholder}</p>` }}
           />
         </CardContent>
-        <CardFooter className="flex flex-col items-end space-y-2 px-6 pb-6 pt-4">
-          <p className="text-xs text-muted-foreground text-right w-full">
-            {t('aiGeneratedContentWarning')}
-          </p>
-           <Button
-            onClick={() => handleCopyToClipboard(outputText)}
-            variant="outline"
-            size="sm"
-            className="w-full md:w-auto"
-            disabled={!outputText || isLoading || isDeepResearchLoading}
-           >
-            <Copy className="mr-2 h-4 w-4" />
-            {t('copyToClipboard')}
-          </Button>
+        <CardFooter className="flex flex-col items-center space-y-4 px-6 pb-6 pt-4">
+           {paginatedOutput.length > 1 && (
+            <div className="flex items-center justify-center space-x-2">
+              {paginatedOutput.map((_, index) => (
+                <Button
+                  key={index}
+                  variant={currentPage === index + 1 ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {t('page')} {index + 1}
+                </Button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col items-end space-y-2 w-full">
+            <p className="text-xs text-muted-foreground text-right w-full">
+              {t('aiGeneratedContentWarning')}
+            </p>
+            <Button
+              onClick={() => handleCopyToClipboard(outputText)}
+              variant="outline"
+              size="sm"
+              className="w-full md:w-auto"
+              disabled={!outputText || isLoading || isDeepResearchLoading}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {t('copyToClipboard')}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 
