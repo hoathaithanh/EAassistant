@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -81,7 +80,6 @@ export default function ModelParametersSheet({
         step={step}
         value={[value]}
         onValueChange={onValueChange}
-        className="[&>span]:h-1 [&>span]:w-1"
       />
     </div>
   );
