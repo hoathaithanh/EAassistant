@@ -35,7 +35,6 @@ interface ResearchResult {
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeepResearchLoading, setIsDeepResearchLoading] = useState(false);
   const [selectedTone, setSelectedTone] = useState<Tone>('professional');
   const [deepResearchResults, setDeepResearchResults] = useState<ResearchResult[]>([]);
@@ -63,33 +62,20 @@ export default function AuditAssistantClient() {
     }
   };
 
-  const makeAICall = async <TInput, TOutput>(
-    aiFunction: (input: TInput) => Promise<TOutput>,
-    input: TInput,
-    successCallback: (output: TOutput) => void,
-    setLoadingState: (loading: boolean) => void = setIsLoading // Default to main loading
-  ) => {
-    if (!inputText.trim() && aiFunction !== deepResearch) { // inputText check not needed for deep research (uses outputText)
-      toast({
-        title: 'Input Required',
-        description: 'Please enter some text to process.',
-        variant: 'destructive',
-      });
-      return;
     }
     if (aiFunction === deepResearch && !outputText.trim()) {
       toast({
         title: 'Generated Text Required',
         description: 'Please generate some text first before searching for related documents.',
-        variant: 'destructive',
-      });
+          ? 'The generated text has been copied to your clipboard.'
+          : 'The research results have been copied to your clipboard.',
       return;
     }
 
     setLoadingState(true);
     try {
       const result = await aiFunction(input);
-      successCallback(result);
+        description: 'Failed to copy text to clipboard.',
     } catch (error) {
       console.error('AI call failed:', error);
       toast({
@@ -103,16 +89,16 @@ export default function AuditAssistantClient() {
       setLoadingState(false);
     }
   };
-
-  const handleRewrite = () => {
+        title: 'Input Required',
+        description: 'Please enter some text to process.',
     makeAICall(
       rewriteAuditReport,
       { text: inputText, outputLanguage: language } as RewriteAuditReportInput,
       (output) => setOutputText(output.rewrittenText)
     );
   };
-
-  const handleExpand = () => {
+        title: 'Generated Text Required',
+        description: 'Please generate some text first before searching for related documents.',
     makeAICall(
       expandAuditReport,
       { text: inputText, outputLanguage: language } as ExpandAuditReportInput,
@@ -123,24 +109,12 @@ export default function AuditAssistantClient() {
   const handleSummarize = () => {
     makeAICall(
       summarizeAuditReport,
-      { reportSection: inputText, outputLanguage: language } as SummarizeAuditReportInput,
-      (output) => setOutputText(output.summary)
-    );
-  };
-
-  const handleChangeTone = () => {
-    makeAICall(
-      changeAuditReportTone,
-      { reportText: inputText, tone: selectedTone, outputLanguage: language } as ChangeAuditReportToneInput,
-      (output) => setOutputText(output.modifiedReportText)
-    );
-  };
+      console.error('AI call failed:', error);
 
   const handleDeepResearch = () => {
-    makeAICall(
+        description: (error as Error).message || 'Unknown error',
       deepResearch,
       { inputText: outputText, outputLanguage: language } as DeepResearchInput,
-      (output: DeepResearchOutput) => setDeepResearchResults(output.results || []),
       setIsDeepResearchLoading
     );
   };
@@ -188,6 +162,14 @@ export default function AuditAssistantClient() {
             {t('aiToolsLabel')}
           </CardTitle>
         </CardHeader>
+
+  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
+  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
+
+  useEffect(() => {
+    setInputPlaceholder(t('inputPlaceholder'));
+    setOutputPlaceholder(t('outputPlaceholder'));
+  }, [language, t]);
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button onClick={handleRewrite} disabled={isLoading || isDeepResearchLoading} className="w-full justify-start text-left py-6">
             {isLoading && !isDeepResearchLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
@@ -276,17 +258,14 @@ export default function AuditAssistantClient() {
             <Button
               onClick={handleDeepResearch}
               disabled={!outputText || isLoading || isDeepResearchLoading}
-              size="sm"
-            >
-              {isDeepResearchLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-              {t('searchRelatedDocuments')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isDeepResearchLoading && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" />
+          <Textarea
+            id="outputText"
+            value={outputText}
+            readOnly
+            placeholder={outputPlaceholder}
+            className="min-h-[200px] text-base bg-muted/50 rounded-md shadow-sm"
+            rows={10}
+          />
               <p className="text-muted-foreground">{t('processing')}</p>
             </div>
           )}
@@ -332,3 +311,4 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
+                    href={result.link}
