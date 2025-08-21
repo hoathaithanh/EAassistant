@@ -54,7 +54,13 @@ const changeAuditReportToneFlow = ai.defineFlow(
     outputSchema: ChangeAuditReportToneOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output || { modifiedReportText: '' };
+    } catch (error) {
+      console.error('[changeAuditReportToneFlow] Error:', error);
+      return { modifiedReportText: '' };
+    }
   }
 );
+

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,17 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles, Library, Link as LinkIcon, Search } from 'lucide-react';
-import { useLanguage, useModelParameters } from "@/components/providers";
-import type { ModelParameters } from "@/ai/schemas/model-parameters-schema";
-import { Textarea } from '@/components/ui/textarea';
+import { useLanguage, useModelParameters, ModelParameters } from '@/components/providers';
 
 import { rewriteAuditReport, type RewriteAuditReportInput } from '@/ai/flows/rewrite-audit-report';
-import { expandAuditReport, type ExpandAuditReportInput, type ExpandAuditReportOutput } from '@/ai/flows/expand-audit-report';
+import { expandAuditReport, type ExpandAuditReportInput } from '@/ai/flows/expand-audit-report';
 import { summarizeAuditReport, type SummarizeAuditReportInput } from '@/ai/flows/summarize-audit-report';
 import { changeAuditReportTone, type ChangeAuditReportToneInput } from '@/ai/flows/change-audit-report-tone';
 import { deepResearch, type DeepResearchInput, type DeepResearchOutput } from '@/ai/flows/deep-research-flow';
-import type { GenerationCommonConfig } from 'genkit';
-
 
 type Tone = 'professional' | 'formal' | 'empathetic' | 'friendly' | 'humorous';
 const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humorous'];
@@ -35,42 +32,20 @@ interface ResearchResult {
   displayLink: string;
 }
 
-// This function provides a base configuration. In a real app, you might fetch
-// these values from a user's settings, a database, or environment variables.
-function getConfig(
-  customConfig: Partial<GenerationCommonConfig> = {}
-): GenerationCommonConfig {
-  const defaults: GenerationCommonConfig = {
-    temperature: 0.3,
-    topP: 0.3,
-    topK: 20,
-    maxOutputTokens: 2048,
-    // frequencyPenalty and presencePenalty are not standard in Gemini,
-    // but are kept here as placeholders if you switch to a model that supports them.
-  };
-
-  // Filter out undefined values from customConfig before merging
-  const filteredCustomConfig = Object.fromEntries(
-    Object.entries(customConfig).filter(([, value]) => value !== undefined)
-  );
-  
-  return {...defaults, ...filteredCustomConfig};
-}
-
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
-  const [processedOutputHtml, setProcessedOutputHtml] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeepResearchLoading, setIsDeepResearchLoading] = useState(false);
   const [selectedTone, setSelectedTone] = useState<Tone>('professional');
   const [deepResearchResults, setDeepResearchResults] = useState<DeepResearchOutput['results']>([]);
   const { toast } = useToast();
   const { t, language } = useLanguage();
-  const { parameters } = useModelParameters();
+  const { parameters: modelParameters } = useModelParameters();
+  const [processedOutputHtml, setProcessedOutputHtml] = useState('');
 
-  const [inputPlaceholder, setInputPlaceholder] = useState('');
-  const [outputPlaceholder, setOutputPlaceholder] = useState('');
+  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
+  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
 
   useEffect(() => {
     setInputPlaceholder(t('inputPlaceholder'));
@@ -78,83 +53,61 @@ export default function AuditAssistantClient() {
   }, [language, t]);
 
   useEffect(() => {
-    if (outputText) {
-      // Process for bold/italic and then handle newlines
-      const withStyling = outputText.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
-      setProcessedOutputHtml(withStyling);
+    if (typeof outputText === 'string') {
+      const html = outputText.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>');
+      setProcessedOutputHtml(html);
     } else {
       setProcessedOutputHtml('');
     }
   }, [outputText]);
 
 
-  const handleCopyToClipboard = (textToCopy: string, type: 'output' | 'research') => {
+  const handleCopyToClipboard = async (textToCopy: string) => {
     if (!textToCopy) return;
-  
-    // Modern API with fallback
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(textToCopy).then(() => {
+
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
         toast({
           title: t('copied'),
-          description: type === 'output' ? 'The generated text has been copied.' : 'The research results have been copied.',
-          duration: 3000,
+          description: t('clipboardApiSuccess'),
         });
-      }).catch(err => {
-        console.error('Modern copy failed: ', err);
-        // If modern API fails, it might be due to transient browser issues, try legacy
-        legacyCopy(textToCopy, type);
-      });
+      } catch (err) {
+        console.error('Failed to copy with Clipboard API: ', err);
+        toast({ title: t('errorOccurred'), description: (err as Error).message, variant: 'destructive' });
+      }
     } else {
       // Fallback for non-secure contexts or older browsers
-      legacyCopy(textToCopy, type);
-    }
-  };
-  
-  const legacyCopy = (textToCopy: string, type: 'output' | 'research') => {
-    const textArea = document.createElement('textarea');
-    textArea.value = textToCopy;
-  
-    // Make the textarea out of sight
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-9999px';
-    textArea.style.top = '0';
-  
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-  
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
+      const textArea = document.createElement('textarea');
+      textArea.value = textToCopy;
+      textArea.style.position = 'absolute';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
         toast({
           title: t('copied'),
           description: t('legacyCopySuccess'),
-          duration: 3000,
         });
-      } else {
-        throw new Error('Copy command failed');
+      } catch (err) {
+        console.error('Failed to copy with execCommand: ', err);
+        toast({ title: t('errorOccurred'), description: (err as Error).message, variant: 'destructive' });
+      } finally {
+        document.body.removeChild(textArea);
       }
-    } catch (err) {
-      console.error('Legacy copy failed: ', err);
-      toast({
-        title: t('errorOccurred'),
-        description: 'Failed to copy text to clipboard.',
-        variant: 'destructive',
-      });
     }
-  
-    document.body.removeChild(textArea);
   };
 
-  const makeAICall = async <TInput extends { config?: ModelParameters }, TOutput>(
+  const makeAICall = async <TInput, TOutput>(
     aiFunction: (input: TInput) => Promise<TOutput>,
-    input: Omit<TInput, 'config'>,
-    successCallback: (output: TOutput) => void,
+    input: TInput,
+    getOutput: (output: TOutput) => string,
     setLoadingState: (loading: boolean) => void = setIsLoading
   ) => {
-    const fullInput = { ...input, config: getConfig(parameters) } as TInput;
-
-    if (!inputText.trim() && aiFunction !== deepResearch) {
+    const textForProcessing = aiFunction === deepResearch ? outputText : inputText;
+    if (!textForProcessing.trim()) {
       toast({
         title: 'Input Required',
         description: 'Please enter some text to process.',
@@ -162,34 +115,27 @@ export default function AuditAssistantClient() {
       });
       return;
     }
-    if (aiFunction === deepResearch && !outputText.trim()) {
-      toast({
-        title: 'Generated Text Required',
-        description: 'Please generate some text first before searching for related documents.',
-        variant: 'destructive',
-      });
-      return;
-    }
-  
+
     setLoadingState(true);
     try {
+      // Add model parameters to the input object
+      const fullInput = { ...input, config: modelParameters };
       const result = await aiFunction(fullInput);
-      successCallback(result);
+
+      if (aiFunction === deepResearch) {
+        setDeepResearchResults((result as DeepResearchOutput).results || []);
+      } else {
+        const resultText = getOutput(result);
+        setOutputText(resultText || ''); // Ensure we always set a string
+      }
+
     } catch (error) {
       console.error('AI call failed:', error);
-      const errorMessage = (error as Error).message || 'Unknown error';
-      let toastDescription = errorMessage;
-  
-      if (errorMessage.includes('503') || errorMessage.includes('overloaded')) {
-        toastDescription = t('aiServiceOverloadedError');
-      }
-  
       toast({
         title: t('errorOccurred'),
-        description: toastDescription,
+        description: (error as Error).message || 'Unknown error',
         variant: 'destructive',
       });
-  
       if (aiFunction !== deepResearch) setOutputText('');
       else setDeepResearchResults([]);
     } finally {
@@ -200,40 +146,40 @@ export default function AuditAssistantClient() {
   const handleRewrite = () => {
     makeAICall(
       rewriteAuditReport,
-      { text: inputText, outputLanguage: language },
-      (output) => setOutputText(output.rewrittenText)
+      { text: inputText, outputLanguage: language } as RewriteAuditReportInput,
+      (output) => output.rewrittenText
     );
   };
 
   const handleExpand = () => {
     makeAICall(
-        expandAuditReport,
-        { text: inputText, outputLanguage: language },
-        (output: ExpandAuditReportOutput) => setOutputText(output.expandedText)
+      expandAuditReport,
+      { text: inputText, outputLanguage: language } as ExpandAuditReportInput,
+      (output) => output.expandedText
     );
   };
 
   const handleSummarize = () => {
     makeAICall(
       summarizeAuditReport,
-      { reportSection: inputText, outputLanguage: language },
-      (output) => setOutputText(output.summary)
+      { reportSection: inputText, outputLanguage: language } as SummarizeAuditReportInput,
+      (output) => output.summary
     );
   };
 
   const handleChangeTone = () => {
     makeAICall(
       changeAuditReportTone,
-      { reportText: inputText, tone: selectedTone, outputLanguage: language },
-      (output) => setOutputText(output.modifiedReportText)
+      { reportText: inputText, tone: selectedTone, outputLanguage: language } as ChangeAuditReportToneInput,
+      (output) => output.modifiedReportText
     );
   };
 
   const handleDeepResearch = () => {
     makeAICall(
       deepResearch,
-      { inputText: outputText, outputLanguage: language },
-      (output: DeepResearchOutput) => setDeepResearchResults(output.results || []),
+      { inputText: outputText, outputLanguage: language } as DeepResearchInput,
+      () => '', // Not used for deep research, result is handled directly
       setIsDeepResearchLoading
     );
   };
@@ -325,24 +271,17 @@ export default function AuditAssistantClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-           <div
-            id="outputText"
-            className="min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base shadow-sm whitespace-pre-wrap overflow-auto"
-            style={{lineHeight: '1.5rem'}}
-          >
-            {processedOutputHtml ? (
-              <div dangerouslySetInnerHTML={{ __html: processedOutputHtml }} />
-            ) : (
-              <p className="text-muted-foreground">{outputPlaceholder}</p>
-            )}
-          </div>
+          <div
+            className="prose dark:prose-invert min-h-[200px] w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+            dangerouslySetInnerHTML={{ __html: processedOutputHtml || `<p class="text-muted-foreground">${outputPlaceholder}</p>`}}
+          />
         </CardContent>
         <CardFooter className="flex flex-col items-end space-y-2 px-6 pb-6 pt-4">
           <p className="text-xs text-muted-foreground text-right w-full">
             {t('aiGeneratedContentWarning')}
           </p>
            <Button
-            onClick={() => handleCopyToClipboard(outputText, 'output')}
+            onClick={() => handleCopyToClipboard(outputText)}
             variant="outline"
             size="sm"
             className="w-full md:w-auto"
@@ -405,7 +344,7 @@ export default function AuditAssistantClient() {
         {deepResearchResults.length > 0 && !isDeepResearchLoading && (
           <CardFooter className="flex justify-end">
             <Button
-              onClick={() => handleCopyToClipboard(formatDeepResearchResultsForCopy(deepResearchResults), 'research')}
+              onClick={() => handleCopyToClipboard(formatDeepResearchResultsForCopy(deepResearchResults))}
               variant="outline"
               size="sm"
               className="w-full md:w-auto"
@@ -419,3 +358,4 @@ export default function AuditAssistantClient() {
       </Card>
     </div>
   );
+}

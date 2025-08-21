@@ -57,7 +57,12 @@ const summarizeAuditReportFlow = ai.defineFlow(
     outputSchema: SummarizeAuditReportOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output || { summary: '' };
+    } catch (error) {
+      console.error('[summarizeAuditReportFlow] Error:', error);
+      return { summary: '' };
+    }
   }
 );

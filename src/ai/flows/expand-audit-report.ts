@@ -61,13 +61,7 @@ const expandAuditReportFlow = ai.defineFlow(
     try {
       const {output} = await expandAuditReportPrompt(input);
       // The prompt now handles the null check implicitly by its schema, but a check here is good practice.
-      if (output) {
-        return output;
-      } else {
-        // This case handles if the model somehow returns a null/undefined response despite the schema.
-        console.warn('[expandAuditReportFlow] LLM returned a null/undefined output. Returning empty string.');
-        return { expandedText: '' };
-      }
+      return output || { expandedText: '' };
     } catch (error) {
       console.error('[expandAuditReportFlow] Error executing prompt:', error);
       // This will catch schema validation errors (e.g., model returns something other than { expandedText: '...' })
@@ -76,3 +70,4 @@ const expandAuditReportFlow = ai.defineFlow(
     }
   }
 );
+

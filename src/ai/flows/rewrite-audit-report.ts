@@ -37,9 +37,6 @@ Generate the response in the following language: {{{outputLanguage}}}
 
 Text to rewrite:
 {{{text}}}`,
-  config: {
-    temperature: 0.7, // Default temperature, can be overridden by input.config
-  }
 });
 
 const rewriteAuditReportFlow = ai.defineFlow(
@@ -49,7 +46,12 @@ const rewriteAuditReportFlow = ai.defineFlow(
     outputSchema: RewriteAuditReportOutputSchema,
   },
   async input => {
-    const {output} = await rewriteAuditReportPrompt(input);
-    return output!;
+    try {
+      const {output} = await rewriteAuditReportPrompt(input);
+      return output || { rewrittenText: '' };
+    } catch (error) {
+      console.error('[rewriteAuditReportFlow] Error:', error);
+      return { rewrittenText: '' };
+    }
   }
 );
