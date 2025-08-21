@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles, Library, Link as LinkIcon, Search } from 'lucide-react';
-import { useLanguage, ModelParameters, useModelParameters } from "@/components/providers";
+import { useLanguage, useModelParameters } from "@/components/providers";
+import type { ModelParameters } from "@/ai/schemas/model-parameters-schema";
 import { Textarea } from '@/components/ui/textarea';
 
 import { rewriteAuditReport, type RewriteAuditReportInput } from '@/ai/flows/rewrite-audit-report';
@@ -68,8 +69,8 @@ export default function AuditAssistantClient() {
   const { t, language } = useLanguage();
   const { parameters } = useModelParameters();
 
-  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
-  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
+  const [inputPlaceholder, setInputPlaceholder] = useState('');
+  const [outputPlaceholder, setOutputPlaceholder] = useState('');
 
   useEffect(() => {
     setInputPlaceholder(t('inputPlaceholder'));
@@ -418,5 +419,3 @@ export default function AuditAssistantClient() {
       </Card>
     </div>
   );
-
-    

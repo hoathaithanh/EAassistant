@@ -14,7 +14,7 @@ export type WebSearchInput = z.infer<typeof WebSearchInputSchema>;
 
 export const SearchResultItemSchema = z.object({
   title: z.string().describe('The title of the search result.'),
-  link: z.string().describe('The direct URL to the search result. This should be a real, clickable link.'),
+  displayLink: z.string().describe('The direct URL to the search result homepage/origin (e.g., "https://www.example.com"). This should be a real, clickable link.'),
   snippet: z.string().describe('A relevant snippet from the search result content.'),
 });
 

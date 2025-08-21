@@ -3,6 +3,8 @@
 
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import type { ModelParameters } from "@/ai/schemas/model-parameters-schema";
+
 
 // Theme Provider
 type Theme = 'light' | 'dark' | 'system';
@@ -250,13 +252,6 @@ export const useLanguage = () => {
 };
 
 // Model Parameters Provider
-export interface ModelParameters {
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  maxOutputTokens?: number;
-}
-
 interface ModelParametersProviderState {
   parameters: ModelParameters;
   setParameters: Dispatch<SetStateAction<ModelParameters>>;
@@ -267,14 +262,31 @@ const ModelParametersContext = createContext<ModelParametersProviderState | unde
 export function ModelParametersProvider({ children }: { children: ReactNode }) {
   const [parameters, setParameters] = useState<ModelParameters>(() => {
     if (typeof window === 'undefined') {
-      return {};
+      return {
+        temperature: 0.3,
+        topP: 0.3,
+        topK: 20,
+        maxOutputTokens: 2048,
+      };
     }
     try {
       const item = window.localStorage.getItem('model-parameters');
-      return item ? JSON.parse(item) : {};
+      const storedParams = item ? JSON.parse(item) : {};
+      return {
+        temperature: 0.3,
+        topP: 0.3,
+        topK: 20,
+        maxOutputTokens: 2048,
+        ...storedParams,
+      };
     } catch (error) {
       console.error(error);
-      return {};
+      return {
+        temperature: 0.3,
+        topP: 0.3,
+        topK: 20,
+        maxOutputTokens: 2048,
+      };
     }
   });
 
