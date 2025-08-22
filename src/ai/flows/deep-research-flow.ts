@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema}, // Use the (non-exported) aliased schema
   tools: [performWebSearch], // Make the tool available to the LLM
-  system: `You are an AI assistant. Your task is to help the user find relevant online resources based on the provided text.
+  prompt: `You are an AI assistant. Your task is to help the user find relevant online resources based on the provided text.
 1. Use the 'performWebSearch' tool to search the internet. The user's input text should be your primary query for the tool. The 'outputLanguage' field from the input should be passed as 'languageCode' to the 'performWebSearch' tool.
 2. The tool will return a list of search results, each containing a title, a link, and a snippet.
 3. You MUST use the information returned by the 'performWebSearch' tool to populate the 'results' field in your output.
@@ -47,8 +47,7 @@ const prompt = ai.definePrompt({
 5. If the 'performWebSearch' tool returns no results, or if the results are not relevant, you should return an empty array for the 'results' field.
 6. The search query to the tool should be based on the user's 'inputText'. The titles and snippets in the output should reflect the language of the search results, which is influenced by the 'languageCode' passed to the tool.
    Make sure to request a reasonable number of results from the tool, for example, 5.
-`,
-  prompt: `
+
 Input Text for Research:
 {{{inputText}}}
 
@@ -84,4 +83,3 @@ const deepResearchFlow = ai.defineFlow(
     return { results: [] };
   }
 );
-
