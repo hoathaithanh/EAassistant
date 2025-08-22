@@ -39,27 +39,19 @@ const prompt = ai.definePrompt({
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema}, // Use the (non-exported) aliased schema
   tools: [performWebSearch], // Make the tool available to the LLM
-  prompt: `You are an AI assistant. Your task is to help the user find relevant online resources based on the provided text.
-1. Use the 'performWebSearch' tool to search the internet. The user's input text should be your primary query for the tool. The 'outputLanguage' field from the input should be passed as 'languageCode' to the 'performWebSearch' tool.
-2. The tool will return a list of search results, each containing a title, a link, and a snippet.
-3. You MUST use the information returned by the 'performWebSearch' tool to populate the 'results' field in your output.
-4. Ensure the output strictly adheres to the 'DeepResearchOutputSchema'.
-5. If the 'performWebSearch' tool returns no results, or if the results are not relevant, you should return an empty array for the 'results' field.
-6. The search query to the tool should be based on the user's 'inputText'. The titles and snippets in the output should reflect the language of the search results, which is influenced by the 'languageCode' passed to the tool.
-   Make sure to request a reasonable number of results from the tool, for example, 5.
+  prompt: `You are an expert AI research assistant. Your primary task is to find highly relevant online resources based on the user's provided text.
 
-Input Text for Research:
+1.  **Analyze the Input:** First, carefully analyze the user's 'inputText' to identify the core subject, key topics, and important keywords.
+2.  **Formulate an Effective Query:** Based on your analysis, construct a concise and effective search query for the 'performWebSearch' tool. Do not simply pass the entire input text. Instead, create a query that targets the most essential concepts. For example, if the text is about "energy savings from LED lighting in commercial buildings", a good query would be "LED lighting energy efficiency commercial buildings" or "commercial building energy audit LED savings".
+3.  **Use the Tool:** Invoke the 'performWebSearch' tool with your formulated query. Pass the user's 'outputLanguage' as the 'languageCode' parameter to get results in the correct language. Request 5 results.
+4.  **Format the Output:** Use the results returned by the tool to populate the 'results' field in your final output. Ensure the output strictly adheres to the schema. If the tool returns no results, return an empty array for the 'results' field.
+
+Input Text to Analyze:
 {{{inputText}}}
 
-Desired Output Language for results (this determines the languageCode for the search tool): {{{outputLanguage}}}
+Desired Language for Search Results: {{{outputLanguage}}}
 
-Based on the system instructions, invoke the 'performWebSearch' tool.
-Use the 'inputText' as the basis for the 'query' parameter of the tool.
-Use the 'outputLanguage' as the 'languageCode' parameter for the tool.
-Request 5 results from the tool.
-
-Then, formulate your response according to the DeepResearchOutputSchema using the results from the tool.
-If the tool provides no relevant results, ensure the 'results' array is empty.
+Now, perform the analysis, formulate the best search query, and call the tool to get the most relevant documents.
 `,
 });
 
