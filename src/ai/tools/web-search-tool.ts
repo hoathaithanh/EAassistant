@@ -12,8 +12,9 @@ import {
   WebSearchOutputSchema,
   type WebSearchInput,
   type WebSearchOutput,
-  type SearchResultItemSchema as SearchResultItem,
 } from '@/ai/schemas/web-search-schemas';
+import type { SearchResultItemSchema as SearchResultItem } from '@/ai/schemas/web-search-schemas';
+
 
 // Ensure you have these in your .env file
 const GOOGLE_CSE_API_KEY = process.env.SEARCH_API_KEY;
@@ -47,7 +48,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi cấu hình API',
-            link: '#',
+            displayLink: '#',
             snippet:
               'SEARCH_API_KEY (Google CSE API Key) chưa được cấu hình trong biến môi trường. Vui lòng kiểm tra tệp .env.',
           },
@@ -60,7 +61,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi cấu hình CSE ID',
-            link: '#',
+            displayLink: '#',
             snippet:
               'SEARCH_ENGINE_ID (Google CSE ID) chưa được cấu hình trong biến môi trường. Vui lòng kiểm tra tệp .env.',
           },
@@ -108,7 +109,7 @@ export const performWebSearch = ai.defineTool(
           results: [
             {
               title: 'Lỗi khi tìm kiếm trên Web',
-              link: '#',
+              displayLink: '#',
               snippet: friendlyMessage,
             },
           ],
@@ -123,12 +124,24 @@ export const performWebSearch = ai.defineTool(
       }
 
       const mappedResults: SearchResultItem[] = data.items
-        .map((item: any) => ({
+      .map((item: any) => {
+        let displayLink = '#';
+        try {
+          if (item.link && (item.link.startsWith('http://') || item.link.startsWith('https://'))) {
+            const parsedUrl = new URL(item.link);
+            displayLink = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
+          }
+        } catch (e) {
+          console.warn(`[performWebSearch] Could not parse URL: ${item.link}. Defaulting to '#'.`);
+        }
+        console.log(`[performWebSearch] Link processing: Original="${item.link}", ExtractedSchemeHostname="${displayLink}"`);
+        return {
           title: item.title || 'N/A',
-          link: item.link || '#', // Ensure link is always present
+          displayLink: displayLink,
           snippet: item.snippet || item.htmlSnippet || 'N/A',
-        }))
-        .filter((result: SearchResultItem) => result.link && result.link !== '#');
+        };
+      })
+      .filter((result: SearchResultItem) => result.displayLink && result.displayLink !== '#');
 
       console.log('[performWebSearch] Mapped results:', JSON.stringify(mappedResults, null, 2));
       return { results: mappedResults.slice(0, input.numResults) };
@@ -139,7 +152,7 @@ export const performWebSearch = ai.defineTool(
         results: [
           {
             title: 'Lỗi thực thi tìm kiếm trên Web',
-            link: '#',
+            displayLink: '#',
             snippet: `Đã xảy ra lỗi khi thực hiện tìm kiếm: ${error.message}`,
           },
         ],

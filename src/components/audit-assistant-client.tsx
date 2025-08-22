@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, Zap, Settings2, TextSearch, AlignLeft, FileText, Sparkles, Library, Link as LinkIcon, Search } from 'lucide-react';
-import { useLanguage } from '@/components/providers';
+import { useLanguage, useModelParameters, ModelParameters } from '@/components/providers';
 
 import { rewriteAuditReport, type RewriteAuditReportInput } from '@/ai/flows/rewrite-audit-report';
 import { expandAuditReport, type ExpandAuditReportInput } from '@/ai/flows/expand-audit-report';
@@ -29,8 +29,10 @@ const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humo
 interface ResearchResult {
   title: string;
   snippet: string;
-  link: string;
+  displayLink: string;
 }
+
+const CHARS_PER_PAGE = 2500; // Approximate characters for an A4 page
 
 export default function AuditAssistantClient() {
   const [inputText, setInputText] = useState('');
@@ -38,38 +40,100 @@ export default function AuditAssistantClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDeepResearchLoading, setIsDeepResearchLoading] = useState(false);
   const [selectedTone, setSelectedTone] = useState<Tone>('professional');
-  const [deepResearchResults, setDeepResearchResults] = useState<ResearchResult[]>([]);
+  const [deepResearchResults, setDeepResearchResults] = useState<DeepResearchOutput['results']>([]);
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const { parameters: modelParameters } = useModelParameters();
+  
+  const [paginatedOutput, setPaginatedOutput] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const handleCopyToClipboard = async (textToCopy: string, type: 'output' | 'research') => {
+  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
+  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
+
+  useEffect(() => {
+    setInputPlaceholder(t('inputPlaceholder'));
+    setOutputPlaceholder(t('outputPlaceholder'));
+  }, [language, t]);
+
+  useEffect(() => {
+    if (typeof outputText === 'string' && outputText) {
+      const pages = [];
+      let remainingText = outputText;
+      while (remainingText.length > 0) {
+        if (remainingText.length <= CHARS_PER_PAGE) {
+          pages.push(remainingText);
+          break;
+        }
+
+        let sliceEnd = CHARS_PER_PAGE;
+        // Try to not cut words/sentences in half
+        const lastPeriod = remainingText.lastIndexOf('.', sliceEnd);
+        const lastSpace = remainingText.lastIndexOf(' ', sliceEnd);
+
+        if (lastPeriod > CHARS_PER_PAGE - 200) { // prefer sentence end
+          sliceEnd = lastPeriod + 1;
+        } else if (lastSpace > CHARS_PER_PAGE - 200) { // or word end
+          sliceEnd = lastSpace + 1;
+        }
+        
+        pages.push(remainingText.substring(0, sliceEnd));
+        remainingText = remainingText.substring(sliceEnd);
+      }
+      setPaginatedOutput(pages.map(page => page.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>')));
+      setCurrentPage(1);
+    } else {
+      setPaginatedOutput([]);
+      setCurrentPage(1);
+    }
+  }, [outputText]);
+
+  const handleCopyToClipboard = async (textToCopy: string) => {
     if (!textToCopy) return;
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      toast({
-        title: t('copied'),
-        description: type === 'output'
-          ? 'The generated text has been copied to your clipboard.'
-          : 'The research results have been copied to your clipboard.',
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Failed to copy text: ', error);
-      toast({
-        title: t('errorOccurred'),
-        description: 'Failed to copy text to clipboard.',
-        variant: 'destructive',
-      });
+
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        toast({
+          title: t('copied'),
+          description: t('clipboardApiSuccess'),
+        });
+      } catch (err) {
+        console.error('Failed to copy with Clipboard API: ', err);
+        toast({ title: t('errorOccurred'), description: (err as Error).message, variant: 'destructive' });
+      }
+    } else {
+      // Fallback for non-secure contexts or older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = textToCopy;
+      textArea.style.position = 'absolute';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: t('copied'),
+          description: t('legacyCopySuccess'),
+        });
+      } catch (err) {
+        console.error('Failed to copy with execCommand: ', err);
+        toast({ title: t('errorOccurred'), description: (err as Error).message, variant: 'destructive' });
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   };
 
   const makeAICall = async <TInput, TOutput>(
     aiFunction: (input: TInput) => Promise<TOutput>,
     input: TInput,
-    successCallback: (output: TOutput) => void,
-    setLoadingState: (loading: boolean) => void = setIsLoading // Default to main loading
+    getOutput: (output: TOutput) => string,
+    setLoadingState: (loading: boolean) => void = setIsLoading
   ) => {
-    if (!inputText.trim() && aiFunction !== deepResearch) { // inputText check not needed for deep research (uses outputText)
+    const textForProcessing = aiFunction === deepResearch ? outputText : inputText;
+    if (!textForProcessing.trim()) {
       toast({
         title: 'Input Required',
         description: 'Please enter some text to process.',
@@ -77,19 +141,20 @@ export default function AuditAssistantClient() {
       });
       return;
     }
-    if (aiFunction === deepResearch && !outputText.trim()) {
-      toast({
-        title: 'Generated Text Required',
-        description: 'Please generate some text first before searching for related documents.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     setLoadingState(true);
     try {
-      const result = await aiFunction(input);
-      successCallback(result);
+      // Add model parameters to the input object
+      const fullInput = { ...input, config: modelParameters };
+      const result = await aiFunction(fullInput);
+
+      if (aiFunction === deepResearch) {
+        setDeepResearchResults((result as DeepResearchOutput).results || []);
+      } else {
+        const resultText = getOutput(result);
+        setOutputText(resultText || ''); // Ensure we always set a string
+      }
+
     } catch (error) {
       console.error('AI call failed:', error);
       toast({
@@ -108,7 +173,7 @@ export default function AuditAssistantClient() {
     makeAICall(
       rewriteAuditReport,
       { text: inputText, outputLanguage: language } as RewriteAuditReportInput,
-      (output) => setOutputText(output.rewrittenText)
+      (output) => output.rewrittenText
     );
   };
 
@@ -116,7 +181,7 @@ export default function AuditAssistantClient() {
     makeAICall(
       expandAuditReport,
       { text: inputText, outputLanguage: language } as ExpandAuditReportInput,
-      (output) => setOutputText(output.expandedText)
+      (output) => output.expandedText
     );
   };
 
@@ -124,7 +189,7 @@ export default function AuditAssistantClient() {
     makeAICall(
       summarizeAuditReport,
       { reportSection: inputText, outputLanguage: language } as SummarizeAuditReportInput,
-      (output) => setOutputText(output.summary)
+      (output) => output.summary
     );
   };
 
@@ -132,7 +197,7 @@ export default function AuditAssistantClient() {
     makeAICall(
       changeAuditReportTone,
       { reportText: inputText, tone: selectedTone, outputLanguage: language } as ChangeAuditReportToneInput,
-      (output) => setOutputText(output.modifiedReportText)
+      (output) => output.modifiedReportText
     );
   };
 
@@ -140,22 +205,14 @@ export default function AuditAssistantClient() {
     makeAICall(
       deepResearch,
       { inputText: outputText, outputLanguage: language } as DeepResearchInput,
-      (output: DeepResearchOutput) => setDeepResearchResults(output.results || []),
+      () => '', // Not used for deep research, result is handled directly
       setIsDeepResearchLoading
     );
   };
 
-  const [inputPlaceholder, setInputPlaceholder] = useState(t('inputPlaceholder'));
-  const [outputPlaceholder, setOutputPlaceholder] = useState(t('outputPlaceholder'));
-
-  useEffect(() => {
-    setInputPlaceholder(t('inputPlaceholder'));
-    setOutputPlaceholder(t('outputPlaceholder'));
-  }, [language, t]);
-
   const formatDeepResearchResultsForCopy = (results: ResearchResult[]): string => {
     return results.map(result =>
-      `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.link}`
+      `Title: ${result.title}\nSnippet: ${result.snippet}\nLink: ${result.displayLink}`
     ).join('\n\n');
   };
 
@@ -240,29 +297,41 @@ export default function AuditAssistantClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            id="outputText"
-            value={outputText}
-            readOnly
-            placeholder={outputPlaceholder}
-            className="min-h-[200px] text-base bg-muted/50 rounded-md shadow-sm"
-            rows={10}
+        <div
+            className="prose dark:prose-invert max-w-none min-h-[400px] w-full rounded-md border border-input bg-muted/50 p-6 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: paginatedOutput[currentPage - 1] || `<p class="text-muted-foreground">${outputPlaceholder}</p>` }}
           />
         </CardContent>
-        <CardFooter className="flex flex-col items-end space-y-2 px-6 pb-6 pt-4">
-          <p className="text-xs text-muted-foreground text-right w-full">
-            {t('aiGeneratedContentWarning')}
-          </p>
-           <Button
-            onClick={() => handleCopyToClipboard(outputText, 'output')}
-            variant="outline"
-            size="sm"
-            className="w-full md:w-auto"
-            disabled={!outputText || isLoading || isDeepResearchLoading}
-           >
-            <Copy className="mr-2 h-4 w-4" />
-            {t('copyToClipboard')}
-          </Button>
+        <CardFooter className="flex flex-col items-center space-y-4 px-6 pb-6 pt-4">
+           {paginatedOutput.length > 1 && (
+            <div className="flex items-center justify-center space-x-2">
+              {paginatedOutput.map((_, index) => (
+                <Button
+                  key={index}
+                  variant={currentPage === index + 1 ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {t('page')} {index + 1}
+                </Button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col items-end space-y-2 w-full">
+            <p className="text-xs text-muted-foreground text-right w-full">
+              {t('aiGeneratedContentWarning')}
+            </p>
+            <Button
+              onClick={() => handleCopyToClipboard(outputText)}
+              variant="outline"
+              size="sm"
+              className="w-full md:w-auto"
+              disabled={!outputText || isLoading || isDeepResearchLoading}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {t('copyToClipboard')}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 
@@ -300,7 +369,7 @@ export default function AuditAssistantClient() {
                   <h3 className="font-semibold text-md mb-1 text-primary">{result.title}</h3>
                   <p className="text-sm text-foreground/90 mb-2">{result.snippet}</p>
                   <a
-                    href={result.link}
+                    href={result.displayLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center text-sm text-accent hover:text-accent/80 hover:underline"
@@ -317,7 +386,7 @@ export default function AuditAssistantClient() {
         {deepResearchResults.length > 0 && !isDeepResearchLoading && (
           <CardFooter className="flex justify-end">
             <Button
-              onClick={() => handleCopyToClipboard(formatDeepResearchResultsForCopy(deepResearchResults), 'research')}
+              onClick={() => handleCopyToClipboard(formatDeepResearchResultsForCopy(deepResearchResults))}
               variant="outline"
               size="sm"
               className="w-full md:w-auto"
@@ -332,3 +401,5 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
+
+    

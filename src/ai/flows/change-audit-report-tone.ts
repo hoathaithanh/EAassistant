@@ -11,11 +11,14 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelParametersSchema } from '@/ai/schemas/model-parameters-schema';
+
 
 const ChangeAuditReportToneInputSchema = z.object({
   reportText: z.string().describe('The energy audit report text to modify.'),
   tone: z.string().describe('The desired tone for the report (e.g., professional, humorous, empathetic, formal, friendly).'),
   outputLanguage: z.string().describe('The desired language for the output (e.g., "en" for English, "vn" for Vietnamese).'),
+  config: ModelParametersSchema.optional(),
 });
 export type ChangeAuditReportToneInput = z.infer<typeof ChangeAuditReportToneInputSchema>;
 
@@ -51,7 +54,13 @@ const changeAuditReportToneFlow = ai.defineFlow(
     outputSchema: ChangeAuditReportToneOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output || { modifiedReportText: '' };
+    } catch (error) {
+      console.error('[changeAuditReportToneFlow] Error:', error);
+      return { modifiedReportText: '' };
+    }
   }
 );
+
