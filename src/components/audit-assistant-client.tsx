@@ -22,6 +22,7 @@ import { expandAuditReport, type ExpandAuditReportInput } from '@/ai/flows/expan
 import { summarizeAuditReport, type SummarizeAuditReportInput } from '@/ai/flows/summarize-audit-report';
 import { changeAuditReportTone, type ChangeAuditReportToneInput } from '@/ai/flows/change-audit-report-tone';
 import { deepResearch, type DeepResearchInput, type DeepResearchOutput } from '@/ai/flows/deep-research-flow';
+import { micromark } from 'micromark';
 
 type Tone = 'professional' | 'formal' | 'empathetic' | 'friendly' | 'humorous';
 const tones: Tone[] = ['professional', 'formal', 'empathetic', 'friendly', 'humorous'];
@@ -80,7 +81,7 @@ export default function AuditAssistantClient() {
         pages.push(remainingText.substring(0, sliceEnd));
         remainingText = remainingText.substring(sliceEnd);
       }
-      setPaginatedOutput(pages.map(page => page.replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em>$1</em></strong>')));
+      setPaginatedOutput(pages.map(page => micromark(page)));
       setCurrentPage(1);
     } else {
       setPaginatedOutput([]);
@@ -298,7 +299,7 @@ export default function AuditAssistantClient() {
         </CardHeader>
         <CardContent>
         <div
-            className="prose dark:prose-invert max-w-none min-h-[400px] w-full rounded-md border border-input bg-muted/50 p-6 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm whitespace-pre-wrap"
+            className="prose prose-sm dark:prose-invert max-w-none min-h-[400px] w-full rounded-md border border-input bg-muted/50 p-6 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             dangerouslySetInnerHTML={{ __html: paginatedOutput[currentPage - 1] || `<p class="text-muted-foreground">${outputPlaceholder}</p>` }}
           />
         </CardContent>
@@ -401,5 +402,3 @@ export default function AuditAssistantClient() {
     </div>
   );
 }
-
-    
