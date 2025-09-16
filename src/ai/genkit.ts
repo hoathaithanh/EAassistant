@@ -5,7 +5,7 @@ import type { GenerationCommonConfig } from 'genkit';
 
 export const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.0-flash',
 });
 
 // This function provides a base configuration. In a real app, you might fetch
